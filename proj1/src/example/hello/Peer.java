@@ -39,22 +39,37 @@ package example.hello;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
-public class Client {
+public class Peer implements Hello {
 
-    private Client() {}
-
-    public static void main(String[] args) {
-
-	String host = (args.length < 1) ? null : args[0];
-	try {
-	    Registry registry = LocateRegistry.getRegistry(host);
-	    Hello stub = (Hello) registry.lookup("370082");
-	    String response = stub.sayHello();
-	    System.out.println("response: " + response);
-	} catch (Exception e) {
-	    System.err.println("Client exception: " + e.toString());
-	    e.printStackTrace();
+	public Peer(Registry registry) {
 	}
-    }
+
+	public String sayHello() {
+		return "Hello, world!";
+	}
+
+	public static void main(String args[]) {
+
+		Integer id=-1;
+		
+		try {
+			Registry registry = LocateRegistry.getRegistry();
+			Peer obj = new Peer(registry);
+			Hello stub = (Hello) UnicastRemoteObject.exportObject(obj, 0);
+
+			id = (int) (System.currentTimeMillis() % 1000000);
+
+			// Bind the remote object's stub in the registry
+			registry.rebind(id.toString(), stub);
+
+			System.err.println("Peer ready on "+ id.toString());
+		} catch (Exception e) {
+			System.err.println("Server exception: " + e.toString());
+			e.printStackTrace();
+		}
+		
+		new PeerBody(id);
+	}
 }
