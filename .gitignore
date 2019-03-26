@@ -25,3 +25,8 @@ hs_err_pid*
 tp2/\.classpath
 
 tp2/\.project
+/bin/
+
+\.classpath
+
+\.project

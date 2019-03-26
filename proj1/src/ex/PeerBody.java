@@ -1,4 +1,4 @@
-package example.hello;
+package ex;
 
 public class PeerBody {
 
