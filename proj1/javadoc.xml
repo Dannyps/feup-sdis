@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="private" author="true" classpath="." destdir="doc" doctitle="SDIS - Project 1" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="10" sourcefiles="src/App.java" sourcepath="src" splitindex="true" use="true" version="true"/>
+    </target>
+</project>
