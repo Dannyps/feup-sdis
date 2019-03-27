@@ -50,6 +50,26 @@ public class Peer implements RMIRemote {
 		return "Hello, world!";
 	}
 
+    public int backup(String filename, int replicationDegree) {
+		return 0;
+	}
+
+    public int restore(String filename) {
+		return 0;
+	}
+
+    public int delete(String filename) {
+		return 0;
+	}
+
+    public int reclaim(int a) {
+		return 0;
+	}
+
+    public String getState() {
+		return "";
+	}
+
 	public static void main(String args[]) {
 
 		Integer id=-1;
