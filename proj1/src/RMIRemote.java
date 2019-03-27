@@ -35,40 +35,11 @@
  * intended for use in the design, construction, operation or 
  * maintenance of any nuclear facility.
  */
-package ex;
 
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 
-public class Peer implements RMIRemote {
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
-	public Peer(Registry registry) {
-	}
-
-	public String sayHello() {
-		return "Hello, world!";
-	}
-
-	public static void main(String args[]) {
-
-		Integer id=-1;
-		
-		try {
-			Registry registry = LocateRegistry.getRegistry();
-			Peer obj = new Peer(registry);
-			RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
-
-			id = (int) (System.currentTimeMillis() % 1000000);
-
-			// Bind the remote object's stub in the registry
-			registry.rebind(id.toString(), stub);
-
-			System.err.println("Peer ready on "+ id.toString());
-		} catch (Exception e) {
-			System.err.println("Server exception: " + e.toString());
-			e.printStackTrace();
-		}
-		new Peer(null);
-	}
+public interface RMIRemote extends Remote {
+    String sayHello() throws RemoteException;
 }
