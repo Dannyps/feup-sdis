@@ -40,16 +40,28 @@ package ex;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-public class Client {
+/**
+ * Client Interface
+ * 
+ * Communicates via RMI with the specified peer. Is ran to perform one single operation.
+ * Arguments must be passed when calling running the program. No input will be read from the standard input.
+ * Commands must be of the following format:
+ * 
+ * java App peer_rmi_id sub_protocol [operand_1] [operand_2]
+ * 
+ * @author daniel
+ *
+ */
+public class App {
 
-    private Client() {}
+    private App() {}
 
     public static void main(String[] args) {
 
-	String host = (args.length < 1) ? null : args[0];
+	String peer_rmi_id = args[1];
 	try {
-	    Registry registry = LocateRegistry.getRegistry(host);
-	    RMIRemote stub = (RMIRemote) registry.lookup("370082");
+	    Registry registry = LocateRegistry.getRegistry(null);
+	    RMIRemote stub = (RMIRemote) registry.lookup("408176");
 	    String response = stub.sayHello();
 	    System.out.println("response: " + response);
 	} catch (Exception e) {

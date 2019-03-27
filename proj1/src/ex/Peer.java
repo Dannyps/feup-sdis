@@ -69,7 +69,6 @@ public class Peer implements RMIRemote {
 			System.err.println("Server exception: " + e.toString());
 			e.printStackTrace();
 		}
-		
-		new PeerBody(id);
+		new Peer(null);
 	}
 }
