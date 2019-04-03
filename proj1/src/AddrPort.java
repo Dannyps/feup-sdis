@@ -1,3 +1,7 @@
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 class AddrPort {
     String address = "";
     int port = 0;
@@ -24,6 +28,10 @@ class AddrPort {
         return address;
     }
 
+    InetAddress getAddressINA() throws UnknownHostException {
+        return InetAddress.getByName(address);
+    }
+
     /**
      * @return the port
      */
@@ -34,5 +42,9 @@ class AddrPort {
     @Override
     public String toString() {
         return address.toString() + ":" + Integer.toString(port);
+    }
+
+    public InetSocketAddress getInetSocketAddress(){
+        return new InetSocketAddress(address, port);
     }
 }
