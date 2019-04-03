@@ -1,11 +1,65 @@
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class Peer implements RMIRemote {
 
+	private String serviceAP;
+	private Registry registry;
+	private AddrPort MC;
+	private AddrPort MDB;
+	private ProtocolVersion protoVer;
+	private Integer serverId;
+	private AddrPort MDR;
+	private MulticastSocket mcSocket;
+	private MulticastSocket mdbSocket;
+	private MulticastSocket mdrSocket;
+
 	public Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
 			String serviceAP) {
+		this.registry = registry;
+		this.MC = mC;
+		this.MDB = mDB;
+		this.MDR = mDR;
+		this.protoVer = pv;
+		this.serverId = serverId;
+		this.serviceAP = serviceAP;
+
+		bindToMC();
+		bindToMDB();
+		bindToMDR();
+
+		System.out.println("bound to all three sockets");
+	}
+
+	private void bindToMC() {
+		try {
+			this.mcSocket = new MulticastSocket(MC.getInetSocketAddress());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void bindToMDB() {
+		try {
+			this.mdbSocket = new MulticastSocket(MDB.getInetSocketAddress());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void bindToMDR() {
+		try {
+			this.mdrSocket = new MulticastSocket(MDR.getInetSocketAddress());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public String sayHello() {
@@ -55,7 +109,6 @@ public class Peer implements RMIRemote {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();
 			}
-			new Peer(null, MDR, MDR, MDR, protocolVersion, serverId, serviceAP);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-2);
@@ -70,10 +123,6 @@ public class Peer implements RMIRemote {
 		if (args.length != 6) {
 			System.err.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
 			System.exit(-1);
-		}
-
-		for (String var : args) {
-			System.out.println(var);
 		}
 	}
 }
