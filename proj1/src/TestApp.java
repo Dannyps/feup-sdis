@@ -1,6 +1,7 @@
 
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
@@ -83,7 +84,7 @@ public class TestApp {
 		}
 	}
 
-	private static boolean backup(RMIRemote stub, String[] args) {
+	private static boolean backup(RMIRemote stub, String[] args) throws NumberFormatException, RemoteException {
 		int nargs = args.length;
 		if (nargs != 4) {
 			System.err.println(ConsoleColours.RED_BOLD + "[FATAL] Expected 2 arguments, got " + (nargs - 2) + "!");
@@ -97,19 +98,19 @@ public class TestApp {
 		return true;
 	}
 
-	private static boolean restore(RMIRemote stub, String[] args) {
+	private static boolean restore(RMIRemote stub, String[] args) throws RemoteException {
 		checkArgs(args, "file_name");
 		stub.restore(args[2]);
 		return true;
 	}
 
-	private static boolean delete(RMIRemote stub, String[] args) {
+	private static boolean delete(RMIRemote stub, String[] args) throws RemoteException {
 		checkArgs(args, "file_name");
 		stub.delete(args[2]);
 		return true;
 	}
 
-	private static boolean reclaim(RMIRemote stub, String[] args) {
+	private static boolean reclaim(RMIRemote stub, String[] args) throws NumberFormatException, RemoteException {
 		checkArgs(args, "max_disk_space");
 		stub.reclaim(Integer.parseInt(args[2]));
 		return true;
@@ -132,7 +133,7 @@ public class TestApp {
 		}
 	}
 
-	private static boolean state(RMIRemote stub) {
+	private static boolean state(RMIRemote stub) throws RemoteException {
 		String s = stub.getState();
 
 		System.out.println(s);

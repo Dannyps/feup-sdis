@@ -36,15 +36,19 @@
  * maintenance of any nuclear facility.
  */
 
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface RMIRemote extends Remote {
     String sayHello() throws RemoteException;
-    int backup(String filename, int replicationDegree);
-    int restore(String filename);
-    int delete(String filename);
-    int reclaim(int a);
-    String getState();
+
+    int backup(String filename, int replicationDegree) throws RemoteException;
+
+    int restore(String filename) throws RemoteException;
+
+    int delete(String filename) throws RemoteException;
+
+    int reclaim(int a) throws RemoteException;
+
+    String getState() throws RemoteException;
 }
