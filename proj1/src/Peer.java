@@ -4,7 +4,8 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class Peer implements RMIRemote {
 
-	public Peer(Registry registry) {
+	public Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
+			String serviceAP) {
 	}
 
 	public String sayHello() {
@@ -32,24 +33,47 @@ public class Peer implements RMIRemote {
 	}
 
 	public static void main(String args[]) {
-
-		Integer id=-1;
-		
-		try {
-			Registry registry = LocateRegistry.getRegistry();
-			Peer obj = new Peer(registry);
-			RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
-
-			id = (int) (System.currentTimeMillis() % 1000000);
-
-			// Bind the remote object's stub in the registry
-			registry.rebind(id.toString(), stub);
-
-			System.err.println("Peer ready on "+ id.toString());
+		parseArgs(args);
+		try{
+			AddrPort MC = new AddrPort(args[0]);
+			AddrPort MDB = new AddrPort(args[1]);
+			AddrPort MDR = new AddrPort(args[2]);
+			ProtocolVersion protocolVersion = new ProtocolVersion(args[3]);
+			Integer serverId = Integer.parseInt(args[4]);
+			String serviceAP = args[5];
+	
+			try {
+				Registry registry = LocateRegistry.getRegistry();
+				Peer obj = new Peer(registry, MC, MDB, MDR, protocolVersion, serverId, serviceAP);
+				RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
+	
+				// Bind the remote object's stub in the registry
+				registry.rebind(serviceAP, stub);
+	
+				System.err.println("Peer ready on " + serviceAP);
+			} catch (Exception e) {
+				System.err.println("Server exception: " + e.toString());
+				e.printStackTrace();
+			}
+			new Peer(null, MDR, MDR, MDR, protocolVersion, serverId, serviceAP);
 		} catch (Exception e) {
-			System.err.println("Server exception: " + e.toString());
 			e.printStackTrace();
+			System.exit(-2);
 		}
-		new Peer(null);
+	}
+
+	/**
+	 * Loads arguments from the args list. Terminates execution on bad args.
+	 * @param args
+	 */
+	private static void parseArgs(String[] args) {
+		if (args.length != 6) {
+			System.err.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
+			System.exit(-1);
+		}
+
+		for (String var : args) {
+			System.out.println(var);
+		}
 	}
 }
