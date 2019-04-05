@@ -62,13 +62,15 @@ class RegularFile {
         try {
             // Open the file
             FileInputStream file = new FileInputStream(this.filename);
-            int ret = 0; // upon EOF becomes -1
-            
-            while(ret != -1) {
+            int ret = 0;
+            boolean finished = false;
+            while(!finished) {
                 byte[] b = new byte[RegularFile.CHUNK_MAX_SIZE];
                 
                 // read a chunk of data
                 ret = file.read(b, 0, RegularFile.CHUNK_MAX_SIZE);
+                if(ret == -1) break; // reached EOF
+                
                 offset += ret;
                 
                 // create chunk object
