@@ -66,44 +66,44 @@ public class Peer implements RMIRemote {
 		return "Hello, world!";
 	}
 
-    public int backup(String filename, int replicationDegree) {
+	public int backup(String filename, int replicationDegree) {
 		return 0;
 	}
 
-    public int restore(String filename) {
+	public int restore(String filename) {
 		return 0;
 	}
 
-    public int delete(String filename) {
+	public int delete(String filename) {
 		return 0;
 	}
 
-    public int reclaim(int a) {
+	public int reclaim(int a) {
 		return 0;
 	}
 
-    public String getState() {
+	public String getState() {
 		return "my state";
 	}
 
 	public static void main(String args[]) {
 		parseArgs(args);
-		try{
+		try {
 			AddrPort MC = new AddrPort(args[0]);
 			AddrPort MDB = new AddrPort(args[1]);
 			AddrPort MDR = new AddrPort(args[2]);
 			ProtocolVersion protocolVersion = new ProtocolVersion(args[3]);
 			Integer serverId = Integer.parseInt(args[4]);
 			String serviceAP = args[5];
-	
+
 			try {
 				Registry registry = LocateRegistry.getRegistry();
 				Peer obj = new Peer(registry, MC, MDB, MDR, protocolVersion, serverId, serviceAP);
 				RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
-	
+
 				// Bind the remote object's stub in the registry
 				registry.rebind(serviceAP, stub);
-	
+
 				System.err.println("Peer ready on " + serviceAP);
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
@@ -117,6 +117,7 @@ public class Peer implements RMIRemote {
 
 	/**
 	 * Loads arguments from the args list. Terminates execution on bad args.
+	 * 
 	 * @param args
 	 */
 	private static void parseArgs(String[] args) {
