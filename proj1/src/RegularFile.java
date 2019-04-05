@@ -12,11 +12,10 @@ class RegularFile {
     private String fileID;
     private String filename;
     private int replicationDegree;
-
+    private long fileSize = 0;
     RegularFile(String filename, int replicationDegree) {
         this.replicationDegree = replicationDegree;
         this.filename = filename;
-
     }
     /**
      * @brief Computes an indentifier for a regular file based on filename, creation time, last modification time and size
@@ -38,6 +37,8 @@ class RegularFile {
             String preHash = this.filename + fileAttrs.creationTime() + fileAttrs.lastModifiedTime() + fileAttrs.size() + 
                 Files.getOwner(Paths.get(this.filename)).toString();
             this.fileID = md.digest(preHash.getBytes()).toString();
+            // update internal reference for file size
+            this.fileSize = fileAttrs.size();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -56,31 +57,44 @@ class RegularFile {
         ArrayList<Chunk> chunks = new ArrayList<>();
 
         // Auxiliar variables to handle the file reading offset
-        int offset = 0, chunkNum = 0;
-        
-        
+        int chunkNum = 0;
+        long remainingSize = this.fileSize;
+
         try {
             // Open the file
             FileInputStream file = new FileInputStream(this.filename);
             int ret = 0;
-            boolean finished = false;
-            while(!finished) {
-                byte[] b = new byte[RegularFile.CHUNK_MAX_SIZE];
+
+            // Create chunks of CHUNK_MAX_SIZE
+            // Aditional iteration is for the reminder chunk of size < CHUNK_MAX_SIZE
+            for(int i = 0; i < this.fileSize/RegularFile.CHUNK_MAX_SIZE + 1; i++) {
+                int sizeToRead;
+                if(remainingSize > RegularFile.CHUNK_MAX_SIZE)
+                    sizeToRead = RegularFile.CHUNK_MAX_SIZE;
+                else
+                    sizeToRead = (int)remainingSize; // safe cast because last chunk is < CHUNK_MAX_SIZE (64k)
+                
+                // allocate buffer
+                byte[] b = new byte[sizeToRead];
                 
                 // read a chunk of data
-                ret = file.read(b, 0, RegularFile.CHUNK_MAX_SIZE);
-                if(ret == -1) break; // reached EOF
+                ret = file.read(b, 0, sizeToRead);
                 
-                offset += ret;
+                // Check for read failure (unexpected EOF)
+                if(ret == -1)
+                    throw new Exception("Ops");
+                
+                // Update remaining file size to read
+                remainingSize -= ret;
                 
                 // create chunk object
                 Chunk chunk = new Chunk(this.fileID, chunkNum, this.replicationDegree, b);
                 chunks.add(chunk);
-                
+                    
                 // update chunk number
                 chunkNum++;
             }
-            
+
             // Close file
             file.close();
             
