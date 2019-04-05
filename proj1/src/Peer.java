@@ -4,6 +4,7 @@ import java.net.MulticastSocket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 
 public class Peer implements RMIRemote {
 
@@ -67,6 +68,11 @@ public class Peer implements RMIRemote {
 	}
 
 	public int backup(String filename, int replicationDegree) {
+		RegularFile f = new RegularFile(filename, replicationDegree);
+		ArrayList<Chunk> lst = f.getChunks();
+		for(Chunk c : lst) {
+			System.out.println(c);
+		}
 		return 0;
 	}
 

@@ -15,6 +15,6 @@ class Chunk implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Chunk <%d> , FileID: <%s> , ReplicationDegree: <%d>", this.chunkID, this.fileID, this.replicationDegree);
+        return String.format("Chunk <%d>, FileID: <%s>, ReplicationDegree: <%d>, Size: <%d>", this.chunkID, this.fileID, this.replicationDegree, this.data.length);
     }
 }
