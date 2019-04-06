@@ -69,10 +69,16 @@ public class Peer implements RMIRemote {
 
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
-		ArrayList<Chunk> lst = f.getChunks();
-		for(Chunk c : lst) {
-			System.out.println(c);
+		ArrayList<Chunk> lst;
+		try {
+			lst = f.getChunks();
+			for(Chunk c : lst) {
+				System.out.println(c);
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to open " + e.getMessage());
 		}
+		
 		return 0;
 	}
 

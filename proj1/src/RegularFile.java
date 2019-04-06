@@ -1,46 +1,80 @@
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.MessageDigest;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-class RegularFile {
-    private static int CHUNK_MAX_SIZE = 64000; /** The maximum size by chunk */
-    private byte[] fileID;
-    private String filename;
-    private int replicationDegree;
-    private long fileSize = 0;
-    RegularFile(String filename, int replicationDegree) {
-        this.replicationDegree = replicationDegree;
-        this.filename = filename;
-    }
-    /**
-     * @brief Computes an indentifier for a regular file based on filename, creation time, last modification time and size
-     * @see RegularFile.fileID
-     */
-    private void getFileHash() {
-        // TODO
-        // Get the absolute current path (relative paths are not working, this might not be the best approach)
-        //String absolutePath = Paths.get(".").toAbsolutePath().normalize().toString();
 
-        // Get file metadata (creation time, modification time, owner, filename)
+class RegularFile {
+    private static int CHUNK_MAX_SIZE = 64000; /** maximum file size chunk */
+    private byte[] fileID; /** file identifier sha-256 hash */
+    private String path; /** the path to the file */
+    private int replicationDegree; /** desired file replication */
+    
+    /**
+     * File relevant attributes
+     */
+    private String fileName; /** the filename (retrieved from @see RegularFile.path ) */
+    private long fileSize; /** the file size in bytes */
+    private FileTime fileCreationTime; /** the file creation time */
+    private FileTime fileLastModificationTime; /** file last modified time */
+    private String fileOwner; /** file ownwer */
+
+    /**
+     * 
+     * @param pathname
+     * @param replicationDegree
+     */
+    RegularFile(String pathname, int replicationDegree) {
+        this.replicationDegree = replicationDegree;
+        this.path = pathname;
+    }
+
+    /**
+     * Loads the required file attributes
+     * @throws IOException
+     */
+    private void loadFileAttributes() throws IOException {
+        Path p = Paths.get(this.path);
+        
+        BasicFileAttributes fileAttrs = Files.readAttributes(p, BasicFileAttributes.class);
+
+        this.fileName = p.getFileName().toString();
+        this.fileCreationTime = fileAttrs.creationTime();
+        this.fileLastModificationTime = fileAttrs.lastModifiedTime();
+        this.fileSize = fileAttrs.size();
+        this.fileOwner = Files.getOwner(p).toString();
+    }
+
+    /**
+     * Computes an indentifier for a regular file based on filename, creation time, last modification time and size
+     * @throws IOException Specified file does not exist or other I/O issues
+     */
+    private void getFileHash() throws IOException {
         try {
-            // Get file attributes
-            Path p = Paths.get(this.filename);
-            System.out.println("Got path: " + p.toString());
-            BasicFileAttributes fileAttrs = Files.readAttributes(p, BasicFileAttributes.class);
-            // Compute hash
+            // Get file metadata (creation time, modification time, owner, filename)
+            this.loadFileAttributes();
+
+            // Setup digest algorithm
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            String preHash = this.filename + fileAttrs.creationTime() + fileAttrs.lastModifiedTime() + fileAttrs.size() + 
-                Files.getOwner(Paths.get(this.filename)).toString();
+            
+            // Build string to be hashed
+            String preHash = this.fileName + this.fileCreationTime.toString() + this.fileLastModificationTime.toString() +
+                this.fileOwner + this.fileSize;
+            
+                // Compute hash
             this.fileID = md.digest(preHash.getBytes(StandardCharsets.UTF_8));
 
-            // update internal reference for file size
-            this.fileSize = fileAttrs.size();
+        } catch (IOException e) {
+            throw e;
         } catch (Exception e) {
+            // TODO
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
@@ -49,8 +83,9 @@ class RegularFile {
     /**
      * @brief Splits the file in chunks
      * @return A list of the created chunks
+     * @throws IOException
      */
-    ArrayList<Chunk> getChunks() {
+    ArrayList<Chunk> getChunks() throws IOException {
         // compute the hash for the file
         this.getFileHash();
 
@@ -63,7 +98,7 @@ class RegularFile {
 
         try {
             // Open the file
-            FileInputStream file = new FileInputStream(this.filename);
+            FileInputStream file = new FileInputStream(this.path);
             int ret = 0;
 
             // Create chunks of CHUNK_MAX_SIZE
