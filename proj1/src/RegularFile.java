@@ -1,4 +1,5 @@
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 
 class RegularFile {
     private static int CHUNK_MAX_SIZE = 64000; /** The maximum size by chunk */
-    private String fileID;
+    private byte[] fileID;
     private String filename;
     private int replicationDegree;
     private long fileSize = 0;
@@ -35,7 +36,8 @@ class RegularFile {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             String preHash = this.filename + fileAttrs.creationTime() + fileAttrs.lastModifiedTime() + fileAttrs.size() + 
                 Files.getOwner(Paths.get(this.filename)).toString();
-            this.fileID = md.digest(preHash.getBytes()).toString();
+            this.fileID = md.digest(preHash.getBytes(StandardCharsets.UTF_8));
+
             // update internal reference for file size
             this.fileSize = fileAttrs.size();
         } catch (Exception e) {
