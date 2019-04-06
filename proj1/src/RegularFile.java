@@ -68,7 +68,7 @@ class RegularFile {
             // Aditional iteration is for the reminder chunk of size < CHUNK_MAX_SIZE
             for(int i = 0; i < this.fileSize/RegularFile.CHUNK_MAX_SIZE + 1; i++) {
                 int sizeToRead;
-                if(remainingSize > RegularFile.CHUNK_MAX_SIZE)
+                if(remainingSize >= RegularFile.CHUNK_MAX_SIZE)
                     sizeToRead = RegularFile.CHUNK_MAX_SIZE;
                 else
                     sizeToRead = (int)remainingSize; // safe cast because last chunk is < CHUNK_MAX_SIZE (64k)
@@ -93,9 +93,10 @@ class RegularFile {
                 // update chunk number
                 chunkNum++;
 
-                // Close file
-                file.close();
             }
+
+            // Close file
+            file.close();
             
         } catch (Exception e) {
             e.printStackTrace();
