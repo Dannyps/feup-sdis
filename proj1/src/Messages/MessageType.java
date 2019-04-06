@@ -1,3 +1,5 @@
+package Messages;
+
 public enum MessageType {
     PUTCHUNK,
     STORED,
