@@ -152,5 +152,13 @@ public abstract class Message {
         this.senderId = senderId;
     }
 
+    /**
+     * Returns the message bytes
+     * Note: Only the header is returned. Sub-protocols should override this method to include the body data
+     * @return
+     */
+    public byte[] getMessage() {
+        return this.createHeader();
+    }
 
 }
