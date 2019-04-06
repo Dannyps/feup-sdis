@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.UserPrincipal;
 import java.security.MessageDigest;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,7 +12,7 @@ import java.util.ArrayList;
 
 class RegularFile {
     private static int CHUNK_MAX_SIZE = 64000; /** maximum file size chunk */
-    private byte[] fileID; /** file identifier sha-256 hash */
+    private byte[] fileID = null; /** file identifier sha-256 hash */
     private String path; /** the path to the file */
     private int replicationDegree; /** desired file replication */
     
@@ -140,5 +139,10 @@ class RegularFile {
         }
         
         return chunks;
+    }
+
+    byte[] getFileId() throws IOException {
+        if(this.fileID == null) getFileHash();
+        return this.fileID;
     }
 }
