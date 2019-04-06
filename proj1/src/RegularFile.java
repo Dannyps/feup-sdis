@@ -5,7 +5,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.security.MessageDigest;
 
 class RegularFile {
     private static int CHUNK_MAX_SIZE = 64000; /** The maximum size by chunk */
@@ -82,7 +81,7 @@ class RegularFile {
                 
                 // Check for read failure (unexpected EOF)
                 if(ret == -1)
-                    throw new Exception("Ops");
+                    throw new Exception("Ops"); // TODO
                 
                 // Update remaining file size to read
                 remainingSize -= ret;
@@ -93,10 +92,10 @@ class RegularFile {
                     
                 // update chunk number
                 chunkNum++;
-            }
 
-            // Close file
-            file.close();
+                // Close file
+                file.close();
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
