@@ -4,13 +4,13 @@ import java.io.Serializable;
 
 public class Chunk implements Serializable {
     private byte[] fileID;
-    private Integer chunkID;
+    private Integer chunkNo;
     private Integer replicationDegree;
     private byte[] data;
     
-    public Chunk (byte[] fileID, Integer chunkID, Integer replicationDegree, byte[] data) {
+    public Chunk (byte[] fileID, Integer chunkNo, Integer replicationDegree, byte[] data) {
         this.fileID = fileID;
-        this.chunkID = chunkID;
+        this.chunkNo = chunkNo;
         this.replicationDegree = replicationDegree;
         this.data = data;
     }
@@ -33,7 +33,7 @@ public class Chunk implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("FileID: <%s>, Chunk <%d>, ReplicationDegree: <%d>, Size: <%d>", this.getHexHash(), this.chunkID, this.replicationDegree, this.data.length);
+        return String.format("FileID: <%s>, Chunk <%d>, ReplicationDegree: <%d>, Size: <%d>", this.getHexHash(), this.chunkNo, this.replicationDegree, this.data.length);
     }
 
 	/**
@@ -46,8 +46,8 @@ public class Chunk implements Serializable {
 	/**
 	 * @return the chunkID
 	 */
-	public Integer getChunkID() {
-		return chunkID;
+	public Integer getChunkNo() {
+		return chunkNo;
 	}
 
 	/**
