@@ -161,4 +161,12 @@ public abstract class Message {
         return this.createHeader();
     }
 
+    @Override
+    public String toString() {
+        return String.format(
+            "Message type: %s\n\tVersion: %s\n\tPeer: %s\n",
+            this.messageType.toString(),
+            this.version,
+            this.senderId);
+    }
 }
