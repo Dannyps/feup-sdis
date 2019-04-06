@@ -1,8 +1,10 @@
+package utils;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-class AddrPort {
+public class AddrPort {
     String address = "";
     int port = 0;
 

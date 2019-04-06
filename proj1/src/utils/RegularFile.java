@@ -1,3 +1,5 @@
+package utils;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 
-class RegularFile {
+public class RegularFile {
     private static int CHUNK_MAX_SIZE = 64000; /** maximum file size chunk */
     private byte[] fileID = null; /** file identifier sha-256 hash */
     private String path; /** the path to the file */
@@ -30,7 +32,7 @@ class RegularFile {
      * @param pathname
      * @param replicationDegree
      */
-    RegularFile(String pathname, int replicationDegree) {
+    public RegularFile(String pathname, int replicationDegree) {
         this.replicationDegree = replicationDegree;
         this.path = pathname;
     }
@@ -84,7 +86,7 @@ class RegularFile {
      * @return A list of the created chunks
      * @throws IOException
      */
-    ArrayList<Chunk> getChunks() throws IOException {
+    public ArrayList<Chunk> getChunks() throws IOException {
         // compute the hash for the file
         this.getFileHash();
 
