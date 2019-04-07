@@ -125,7 +125,7 @@ public abstract class Message {
             }
 
             if(this.replicationDegree != null) {
-                buf.write(this.getChunkNoASCII_());
+                buf.write(this.getReplicationDegreeASCII_());
                 buf.write(' ');
             }
 
