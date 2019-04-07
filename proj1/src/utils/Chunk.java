@@ -17,7 +17,13 @@ public class Chunk implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("FileID: <%s>, Chunk <%d>, ReplicationDegree: <%d>, Size: <%d>", Hash.getHexHash(this.fileID), this.chunkNo, this.replicationDegree, this.data.length);
+        String data = Hash.getHexHash(this.data);
+        return String.format("Chunk\n\tFileID: %s\n\tChunk: %d\n\tReplicationDegree: %d\n\tSize: %d\n\tData: %s...", 
+            Hash.getHexHash(this.fileID), 
+            this.chunkNo, 
+            this.replicationDegree, 
+            this.data.length,
+            data.substring(0, Math.min(15, data.length())));
     }
 
 	/**

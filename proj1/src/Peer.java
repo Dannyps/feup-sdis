@@ -1,17 +1,23 @@
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import Messages.Message;
+import Messages.PutChunkMessage;
 import utils.AddrPort;
 import utils.ConsoleColours;
 import utils.Chunk;
 import utils.RegularFile;
 
 public class Peer implements RMIRemote {
-
+	final static int UDP_MAX_SIZE = 65535; //https://en.wikipedia.org/wiki/User_Datagram_Protocol
+	
 	private String serviceAP;
 	private Registry registry;
 	private AddrPort MC;
@@ -74,10 +80,16 @@ public class Peer implements RMIRemote {
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
+		
 		try {
 			lst = f.getChunks();
 			for(Chunk c : lst) {
-				System.out.println(c);
+				System.err.println("[Created chunk] " + c);
+				PutChunkMessage msg = new PutChunkMessage(this.protoVer.getV(), this.serverId, c);
+				byte[] rawMsg = msg.getMessage();
+				DatagramPacket dp = new DatagramPacket(rawMsg, rawMsg.length, MDB.getInetSocketAddress());
+				this.mdbSocket.send(dp);
+				System.err.println("[Sent message] " + msg);
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to open " + e.getMessage());
@@ -121,6 +133,18 @@ public class Peer implements RMIRemote {
 				registry.rebind(serviceAP, stub);
 
 				System.err.println("Peer ready on " + serviceAP);
+
+				// Listen for packets on MDR
+				while(true) {
+					byte[] b = new byte[Peer.UDP_MAX_SIZE];
+					DatagramPacket dp = new DatagramPacket(b, Peer.UDP_MAX_SIZE);
+					obj.mdbSocket.receive(dp);
+					// resize the byte array to fit the exact datagram data length
+					b = Arrays.copyOf(dp.getData(), dp.getLength());
+					// parse the message
+					Message msg = Message.parseMessage(b);
+					System.err.println("[Received message] " + msg);
+				}
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();

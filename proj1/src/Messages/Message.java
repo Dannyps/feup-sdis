@@ -27,6 +27,7 @@ public abstract class Message {
         this.senderId = senderId;
     }
 
+//#region String to 7-bit ASCII bytes util methods
     /**
      * Converts a Java string to an array of bytes. Each byte represents a string
      * character in 7-bit ASCII format Note: Byte values are signed
@@ -95,6 +96,7 @@ public abstract class Message {
     protected byte[] getReplicationDegreeASCII_() {
         return this.stringToASCII_(this.replicationDegree.toString());
     }
+//#endregion
 
     /**
      * @return Returns the <CRLF> terminator sequence
@@ -207,6 +209,7 @@ public abstract class Message {
         
     }
 
+//#region Getters and Setters
     /**
      * @return the messageType
      */
@@ -248,11 +251,12 @@ public abstract class Message {
     public Integer getReplicationDegree() {
         return replicationDegree;
     }
+//#endregion
 
     @Override
     public String toString() {
         return String.format(
-            "Message type: %s\n\tVersion: %s\n\tPeer: %s\n",
+            "Message\n\tType: %s\n\tVersion: %s\n\tSender: %s\n",
             this.messageType.toString(),
             this.version,
             this.senderId);
