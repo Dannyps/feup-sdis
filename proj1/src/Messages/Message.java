@@ -177,6 +177,35 @@ public abstract class Message {
         return this.createHeader();
     }
 
+    /**
+     * Parses a datagram packet and returns the corresponding message
+     * @param msg The datagram data
+     * @return Message
+     * @throws Exception
+     */
+    public static Message parseMessage(byte[] msg) throws Exception {
+        String str = new String(msg, StandardCharsets.US_ASCII);
+        String[] fields = str.split(" ");
+
+        /** all possible fields */
+        String version = fields[1];
+        Integer senderId = Integer.parseInt(fields[2]);
+        byte[] fileId;
+        Integer chunkNo;
+        Integer replicationDegree;
+
+        if(fields[0].equals(MessageType.PUTCHUNK.toString())) {
+            fileId = Message.parseFileId(fields[3].getBytes());
+            chunkNo = Integer.parseInt(fields[4]);
+            replicationDegree = Integer.parseInt(fields[5]);
+            byte[] data = (fields[6].split("\r\n\r\n")[1]).getBytes(StandardCharsets.US_ASCII);
+            return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, data);
+        } else {
+            throw new Exception(String.format("Unexpected message type %s", fields[0]));
+        }
+
+        
+    }
 
     /**
      * @return the messageType
