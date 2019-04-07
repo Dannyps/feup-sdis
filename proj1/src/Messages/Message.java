@@ -131,7 +131,6 @@ public abstract class Message {
 
             // Terminator sequence
             buf.write(this.getSequenceTerminator());
-            buf.write(' ');
             buf.write(this.getSequenceTerminator());
         } catch (IOException e) {
             e.printStackTrace();
