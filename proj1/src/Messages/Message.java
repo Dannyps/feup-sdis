@@ -16,6 +16,18 @@ public abstract class Message {
     protected Integer replicationDegree = null;
 
     /**
+     * 
+     * @param type
+     * @param version
+     * @param senderId
+     */
+    Message(MessageType type, String version, Integer senderId) {
+        this.messageType = type;
+        this.version = version;
+        this.senderId = senderId;
+    }
+
+    /**
      * Converts a Java string to an array of bytes. Each byte represents a string
      * character in 7-bit ASCII format Note: Byte values are signed
      * 
@@ -158,6 +170,49 @@ public abstract class Message {
      */
     public byte[] getMessage() {
         return this.createHeader();
+    }
+
+
+    /**
+     * @return the messageType
+     */
+    public MessageType getMessageType() {
+        return messageType;
+    }
+
+    /**
+     * @return the version
+     */
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * @return the senderId
+     */
+    public Integer getSenderId() {
+        return senderId;
+    }
+
+    /**
+     * @return the fileId
+     */
+    public byte[] getFileId() {
+        return fileId;
+    }
+
+    /**
+     * @return the chunkNo
+     */
+    public Integer getChunkNo() {
+        return chunkNo;
+    }
+
+    /**
+     * @return the replicationDegree
+     */
+    public Integer getReplicationDegree() {
+        return replicationDegree;
     }
 
     @Override
