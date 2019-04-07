@@ -152,15 +152,20 @@ public abstract class Message {
     }
     
     /**
-     * 
-     * @param type
-     * @param version
-     * @param senderId
+     * Parses the file id encoded in the messages
+     * Each byte represents a single hexadecimal digit, resulting in 64 bytes ID
+     * This method reverts to the original 32 bytes SHA-256 format
+     * @param encodedFileId
+     * @return
      */
-    Message(MessageType type, String version, Integer senderId) {
-        this.messageType = type;
-        this.version = version;
-        this.senderId = senderId;
+    protected static byte[] parseFileId(byte[] encodedFileId) {
+        byte[] originalHash = new byte[32];
+        
+        for (int i = 0, j = 0; i < 64; i+=2, j++) {
+            char a = (char)encodedFileId[i], b = (char)encodedFileId[i+1];
+            originalHash[j] = (byte)((a << 4) | (b & 0x0f));
+        }
+        return originalHash;
     }
 
     /**
