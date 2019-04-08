@@ -2,6 +2,7 @@ package Messages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
 import Utils.Hash;
 
@@ -280,6 +281,15 @@ public abstract class Message {
      */
     public byte[] getRawData() {
         return data;
+    }
+
+    /**
+     * @return a DatagramPacket which content is the raw protocol message
+     */
+    public DatagramPacket getDatagramPacket() {
+        byte[] msg = this.getMessage();
+        DatagramPacket dp = new DatagramPacket(msg, msg.length);
+        return dp;
     }
 //#endregion
 

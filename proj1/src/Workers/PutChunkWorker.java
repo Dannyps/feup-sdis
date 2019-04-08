@@ -51,13 +51,11 @@ public class PutChunkWorker implements Runnable {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         // Create message
         try {
             StoredMessage storedMsg = new StoredMessage(msg.getVersion(), this.peer.getPeerId(), msg.getFileId(), msg.getChunkNo());
-            byte[] data = storedMsg.getMessage();
-            DatagramPacket dp = new DatagramPacket(data, data.length);
-            Peer.getInstance().getMcSocket().send(dp);
+            Peer.getInstance().getMcSocket().send(storedMsg.getDatagramPacket());
             System.out.println("[Sent message] " + msg);
         } catch (IOException e) {
             // TODO Auto-generated catch block
