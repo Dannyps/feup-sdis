@@ -10,6 +10,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import Listeners.MDBListen;
 import Messages.Message;
 import Messages.PutChunkMessage;
 import Utils.AddrPort;
@@ -122,7 +123,9 @@ public class Peer implements RMIRemote {
 
 				System.err.println("Peer ready on " + serviceAP);
 
-				
+				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
+				Thread mdbThread = new Thread (mdbRunnable);
+				mdbThread.start();
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();
