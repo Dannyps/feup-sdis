@@ -199,28 +199,33 @@ public abstract class Message {
      */
     public static Message parseMessage(byte[] msg) throws Exception {
         String str = new String(msg, StandardCharsets.US_ASCII);
-        String[] fields = str.split(" ");
-        String msgType = fields[0];
+        // Split message in head and body
+        String head = str.split("\r\n\r\n", 2)[0];
+        String body = str.split("\r\n\r\n", 2)[1];
+        // Split head in fields
+        String[] headFields = head.split(" ");
+        
+        String msgType = headFields[0];
         
         /** all possible fields */
-        String version = fields[1];
-        Integer senderId = Integer.parseInt(fields[2]);
+        String version = headFields[1];
+        Integer senderId = Integer.parseInt(headFields[2]);
         byte[] fileId = null;
         Integer chunkNo = null;
         Integer replicationDegree = null;
 
         if(msgType.equals(MessageType.PUTCHUNK.toString())) {
-            fileId = Message.hexStringToByteArray(fields[3]);//Message.parseFileId(fields[3].getBytes());
-            chunkNo = Integer.parseInt(fields[4]);
-            replicationDegree = Integer.parseInt(fields[5]);
-            byte[] data = (fields[6].split("\r\n\r\n")[1]).getBytes(StandardCharsets.US_ASCII);
+            fileId = Message.hexStringToByteArray(headFields[3]);
+            chunkNo = Integer.parseInt(headFields[4]);
+            replicationDegree = Integer.parseInt(headFields[5]);
+            byte[] data = body.getBytes(StandardCharsets.US_ASCII);
             return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, data);
         } else if(msgType.equals(MessageType.STORED.toString())) {
-            fileId = Message.hexStringToByteArray(fields[3]);
-            chunkNo = Integer.parseInt(fields[4]);
+            fileId = Message.hexStringToByteArray(headFields[3]);
+            chunkNo = Integer.parseInt(headFields[4]);
             return new StoredMessage(version, senderId, fileId, chunkNo);
         } else {
-            throw new Exception(String.format("Unexpected message type %s", fields[0]));
+            throw new Exception(String.format("Unexpected message type %s", headFields[0]));
         }
 
         
