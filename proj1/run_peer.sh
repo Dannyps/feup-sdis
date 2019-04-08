@@ -1,7 +1,7 @@
 # Define addresses and ports for multicast channels
-MC_ADDR="localhost:8001"
-MCB_ADDR="localhost:8002"
-MCR_ADDR="localhost:8003"
+MC_ADDR="224.0.0.1:8001"
+MCB_ADDR="224.0.0.1:8002"
+MCR_ADDR="224.0.0.1:8003"
 
 # Define other parameters
 PROTOCOL_VERSION="1.0"

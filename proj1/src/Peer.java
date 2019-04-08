@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -16,8 +18,8 @@ import utils.Chunk;
 import utils.RegularFile;
 
 public class Peer implements RMIRemote {
-	final static int UDP_MAX_SIZE = 65535; //https://en.wikipedia.org/wiki/User_Datagram_Protocol
-	
+	final static int UDP_MAX_SIZE = 65535; // https://en.wikipedia.org/wiki/User_Datagram_Protocol
+
 	private String serviceAP;
 	private Registry registry;
 	private AddrPort MC;
@@ -39,41 +41,25 @@ public class Peer implements RMIRemote {
 		this.serverId = serverId;
 		this.serviceAP = serviceAP;
 
-		bindToMC();
-		bindToMDB();
-		bindToMDR();
+		this.mcSocket  = bindToMultiCast(MC);
+		this.mdbSocket = bindToMultiCast(MDB);
+		this.mdrSocket = bindToMultiCast(MDR);
 
-		System.out.println("bound to all three sockets");
+		System.out.println("[INFO] Bound to all three sockets successfully.");
 	}
 
-	private void bindToMC() {
+	MulticastSocket bindToMultiCast(AddrPort ap) {
+		MulticastSocket s = null;
 		try {
-			this.mcSocket = new MulticastSocket(MC.getPort());
-			this.mcSocket.joinGroup(MC.getInetAddress());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			s = new MulticastSocket(ap.getPort());
+			s.joinGroup(ap.getInetAddress());
+		} catch (SocketException e) {
+			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
+			System.exit(6);
+		} catch(IOException e){
 			e.printStackTrace();
 		}
-	}
-
-	private void bindToMDB() {
-		try {
-			this.mdbSocket = new MulticastSocket(MDB.getPort());
-			this.mdbSocket.joinGroup(MDB.getInetAddress());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private void bindToMDR() {
-		try {
-			this.mdrSocket = new MulticastSocket(MDR.getPort());
-			this.mdrSocket.joinGroup(MDR.getInetAddress());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		return s;
 	}
 
 	public String sayHello() {
@@ -83,10 +69,10 @@ public class Peer implements RMIRemote {
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
-		
+
 		try {
 			lst = f.getChunks();
-			for(Chunk c : lst) {
+			for (Chunk c : lst) {
 				System.err.println("[Created chunk] " + c);
 				PutChunkMessage msg = new PutChunkMessage(this.protoVer.getV(), this.serverId, c);
 				byte[] rawMsg = msg.getMessage();
@@ -98,7 +84,7 @@ public class Peer implements RMIRemote {
 			System.err.println("Failed to open " + e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		return 0;
 	}
 
@@ -139,7 +125,7 @@ public class Peer implements RMIRemote {
 				System.err.println("Peer ready on " + serviceAP);
 
 				// Listen for packets on MDR
-				while(true) {
+				while (true) {
 					byte[] b = new byte[Peer.UDP_MAX_SIZE];
 					DatagramPacket dp = new DatagramPacket(b, Peer.UDP_MAX_SIZE);
 					obj.mdbSocket.receive(dp);
@@ -166,7 +152,8 @@ public class Peer implements RMIRemote {
 	 */
 	private static void parseArgs(String[] args) {
 		if (args.length != 6) {
-			System.err.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
+			System.err
+					.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
 			System.exit(-1);
 		}
 	}
