@@ -200,20 +200,25 @@ public abstract class Message {
     public static Message parseMessage(byte[] msg) throws Exception {
         String str = new String(msg, StandardCharsets.US_ASCII);
         String[] fields = str.split(" ");
-
+        String msgType = fields[0];
+        
         /** all possible fields */
         String version = fields[1];
         Integer senderId = Integer.parseInt(fields[2]);
-        byte[] fileId;
-        Integer chunkNo;
-        Integer replicationDegree;
+        byte[] fileId = null;
+        Integer chunkNo = null;
+        Integer replicationDegree = null;
 
-        if(fields[0].equals(MessageType.PUTCHUNK.toString())) {
+        if(msgType.equals(MessageType.PUTCHUNK.toString())) {
             fileId = Message.hexStringToByteArray(fields[3]);//Message.parseFileId(fields[3].getBytes());
             chunkNo = Integer.parseInt(fields[4]);
             replicationDegree = Integer.parseInt(fields[5]);
             byte[] data = (fields[6].split("\r\n\r\n")[1]).getBytes(StandardCharsets.US_ASCII);
             return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, data);
+        } else if(msgType.equals(MessageType.STORED.toString())) {
+            fileId = Message.hexStringToByteArray(fields[3]);
+            chunkNo = Integer.parseInt(fields[4]);
+            return new StoredMessage(version, senderId, fileId, chunkNo);
         } else {
             throw new Exception(String.format("Unexpected message type %s", fields[0]));
         }
