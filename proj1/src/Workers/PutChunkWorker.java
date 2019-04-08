@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import Messages.PutChunkMessage;
+import Shared.Peer;
 import Utils.Hash;
 
 public class PutChunkWorker implements Runnable{
@@ -17,12 +18,13 @@ public class PutChunkWorker implements Runnable{
 
     @Override
     public void run() {
+        String dir = String.format("peer%d/%s", Peer.getInstance().getPeerId(), Hash.getHexHash(this.msg.getFileId()));
         // create directory <file id> if folder doesn't exist
-        Path dir = Paths.get(Hash.getHexHash(this.msg.getFileId()));
+        Path dirPath = Paths.get(dir);
 
-        if (!Files.exists(dir)) {
+        if (!Files.exists(dirPath)) {
             try {
-                Files.createDirectories(dir);
+                Files.createDirectories(dirPath);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -31,10 +33,9 @@ public class PutChunkWorker implements Runnable{
 
         // Create file for the chunk
         // TODO what if the chunk already exists? Does the protocol say something regarding this?
-        Path filePath = Paths.get(Hash.getHexHash(this.msg.getFileId()) + "//" + this.msg.getChunkNo());
+        Path filePath = Paths.get(dir + "//" + this.msg.getChunkNo());
         try {
             Files.write(filePath, this.msg.getRawData());
-            System.out.println(String.format("Writing chunk no: %d | Size: %d", this.msg.getChunkNo(), this.msg.getRawData().length));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
