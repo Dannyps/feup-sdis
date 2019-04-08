@@ -4,6 +4,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import utils.ConsoleColours;
+
 /**
  * Client Interface
  * 
@@ -23,6 +24,13 @@ import utils.ConsoleColours;
  */
 public class TestApp {
 
+	private static Thread shutDownThread = new Thread() {
+		public void run() {
+			// clear the console on shutdown.
+			System.out.println(ConsoleColours.RESET);
+		}
+	};
+
 	private TestApp() {
 	}
 
@@ -32,6 +40,7 @@ public class TestApp {
 	 * 
 	 */
 	public static void main(String[] args) {
+		Runtime.getRuntime().addShutdownHook(shutDownThread);
 		int nargs = args.length;
 		if (nargs < 2) {
 			System.err.println(ConsoleColours.YELLOW + "[ERROR] Expected at least 2 arguments, got " + nargs + ".");
