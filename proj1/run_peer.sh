@@ -5,13 +5,14 @@ MCR_ADDR="224.0.0.1:8003"
 
 # Define other parameters
 PROTOCOL_VERSION="1.0"
-PEER_ID=1 # todo, allow incremental peer launching
 
 if [ -z "$1" ]
 then
     PEER_AP="peer_1"
+	PEER_ID=1
 else
     PEER_AP="peer_$1"
+	PEER_ID=$1
 fi
 
 # Launch peer
