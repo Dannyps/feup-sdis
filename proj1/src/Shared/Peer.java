@@ -148,7 +148,7 @@ public class Peer implements RMIRemote {
 
 				System.err.println("Peer ready on " + serviceAP);
 
-				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
+				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket, obj.serverId);
 				Thread mdbThread = new Thread(mdbRunnable);
 				mdbThread.start();
 			} catch (Exception e) {

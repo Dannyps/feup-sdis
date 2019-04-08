@@ -20,11 +20,13 @@ import Workers.PutChunkWorker;
  */
 public class MDBListen implements Runnable {
 
-    MulticastSocket socket;
-    ExecutorService executor;
-
-    public MDBListen(MulticastSocket s) {
-        socket = s;
+    private MulticastSocket socket;
+    private ExecutorService executor;
+    private Integer serverId;
+    
+    public MDBListen(MulticastSocket s, Integer serverId) {
+        this.socket = s;
+        this.serverId = serverId;
     }
 
     @Override
@@ -52,16 +54,18 @@ public class MDBListen implements Runnable {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            System.err.println("[Received message] " + msg);
 
-            PutChunkWorker w = new PutChunkWorker(msg);
-            executor.submit(w);
+            // ignore self messages
+            if(msg.getSenderId() != this.serverId) {
+                System.err.println("[Received message] " + msg);
+                PutChunkWorker w = new PutChunkWorker(msg);
+                executor.submit(w);
+            }
         }
     }
 
     private void initWritersThreadPool() {
         executor = new ThreadPoolExecutor(5, 10, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-
     }
 
 
