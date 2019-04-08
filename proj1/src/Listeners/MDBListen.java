@@ -13,6 +13,7 @@ import Messages.Message;
 import Messages.PutChunkMessage;
 import Shared.Peer;
 import Utils.Constants;
+import Workers.PutChunkWorker;
 
 /**
  * MDBListen
@@ -52,31 +53,11 @@ public class MDBListen implements Runnable {
                 e.printStackTrace();
             }
             System.err.println("[Received message] " + msg);
-            WriteChunkToDisk wc2d = new WriteChunkToDisk(msg);
-            executor.submit(wc2d);
 
+            PutChunkWorker w = new PutChunkWorker(msg);
+            executor.submit(w);
         }
     }
-
-    class WriteChunkToDisk implements Runnable {
-        PutChunkMessage m;
-
-        WriteChunkToDisk(PutChunkMessage message) {
-            m = message;
-        }
-
-        public void run() {
-            try {
-                System.out.println("["+Thread.currentThread().getName()+"] sleeping...");
-                TimeUnit.MILLISECONDS.sleep(1500);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            System.out.println("["+Thread.currentThread().getName()+"] here I must write the chunck to disk!"+ Peer.getInstance().getMcSocket().getLocalPort());
-        }
-    }
-
 
     private void initWritersThreadPool() {
         executor = new ThreadPoolExecutor(5, 10, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
