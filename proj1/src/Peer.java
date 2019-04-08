@@ -12,14 +12,12 @@ import java.util.Arrays;
 
 import Messages.Message;
 import Messages.PutChunkMessage;
-import utils.AddrPort;
-import utils.ConsoleColours;
-import utils.Chunk;
-import utils.RegularFile;
+import Utils.AddrPort;
+import Utils.ConsoleColours;
+import Utils.Chunk;
+import Utils.RegularFile;
 
 public class Peer implements RMIRemote {
-	final static int UDP_MAX_SIZE = 65535; // https://en.wikipedia.org/wiki/User_Datagram_Protocol
-
 	private String serviceAP;
 	private Registry registry;
 	private AddrPort MC;
@@ -124,17 +122,7 @@ public class Peer implements RMIRemote {
 
 				System.err.println("Peer ready on " + serviceAP);
 
-				// Listen for packets on MDR
-				while (true) {
-					byte[] b = new byte[Peer.UDP_MAX_SIZE];
-					DatagramPacket dp = new DatagramPacket(b, Peer.UDP_MAX_SIZE);
-					obj.mdbSocket.receive(dp);
-					// resize the byte array to fit the exact datagram data length
-					b = Arrays.copyOf(dp.getData(), dp.getLength());
-					// parse the message
-					Message msg = Message.parseMessage(b);
-					System.err.println("[Received message] " + msg);
-				}
+				
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();

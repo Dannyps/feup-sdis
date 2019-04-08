@@ -2,8 +2,8 @@ package Messages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import utils.Chunk;
-import utils.Hash;
+import Utils.Chunk;
+import Utils.Hash;
 
 public class PutChunkMessage extends Message {
     private byte[] data; // the raw chunk data
