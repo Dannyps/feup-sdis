@@ -53,6 +53,13 @@ public class Peer implements RMIRemote {
 		return mcSocket;
 	}
 
+	/**
+	 * @return the peer identification
+	 */
+	public Integer getPeerId() {
+		return this.serverId;
+	}
+
 
 	private Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
 			String serviceAP) {
@@ -148,7 +155,7 @@ public class Peer implements RMIRemote {
 
 				System.err.println("Peer ready on " + serviceAP);
 
-				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket, obj.serverId);
+				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
 				Thread mdbThread = new Thread(mdbRunnable);
 				mdbThread.start();
 			} catch (Exception e) {

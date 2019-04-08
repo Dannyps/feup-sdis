@@ -24,9 +24,9 @@ public class MDBListen implements Runnable {
     private ExecutorService executor;
     private Integer serverId;
     
-    public MDBListen(MulticastSocket s, Integer serverId) {
+    public MDBListen(MulticastSocket s) {
         this.socket = s;
-        this.serverId = serverId;
+        this.serverId = Peer.getInstance().getPeerId();
     }
 
     @Override
