@@ -107,12 +107,12 @@ public class Peer implements RMIRemote {
 	public static void main(String args[]) {
 		parseArgs(args);
 		try {
-			AddrPort MC = new AddrPort(args[0]);
-			AddrPort MDB = new AddrPort(args[1]);
-			AddrPort MDR = new AddrPort(args[2]);
-			ProtocolVersion protocolVersion = new ProtocolVersion(args[3]);
-			Integer serverId = Integer.parseInt(args[4]);
-			String serviceAP = args[5];
+			AddrPort MC = new AddrPort(args[3]);
+			AddrPort MDB = new AddrPort(args[4]);
+			AddrPort MDR = new AddrPort(args[5]);
+			ProtocolVersion protocolVersion = new ProtocolVersion(args[0]);
+			Integer serverId = Integer.parseInt(args[1]);
+			String serviceAP = args[2];
 
 			try {
 				Registry registry = LocateRegistry.getRegistry();
