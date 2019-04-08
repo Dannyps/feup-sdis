@@ -274,6 +274,13 @@ public abstract class Message {
     public Integer getReplicationDegree() {
         return replicationDegree;
     }
+
+    /**
+     * @return the message raw data, aka body
+     */
+    public byte[] getRawData() {
+        return data;
+    }
 //#endregion
 
     @Override
@@ -298,7 +305,7 @@ public abstract class Message {
             String data = Hash.getHexHash(this.data);
             s += String.format("\n\tData: %s...\n\tData Size: %s", 
                 data.substring(0, Math.min(15, data.length())),
-                data.length());
+                this.data.length);
         }
 
         return s;
