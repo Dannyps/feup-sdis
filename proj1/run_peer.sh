@@ -11,7 +11,7 @@ if [ -z "$1" ]
 then
     PEER_AP="peer_1"
 else
-    PEER_AP=$1
+    PEER_AP="peer_$1"
 fi
 
 # Launch peer
