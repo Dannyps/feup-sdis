@@ -3,6 +3,7 @@ package Messages;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import Utils.Hash;
 
 public abstract class Message {
     /** Required fields */
@@ -14,6 +15,7 @@ public abstract class Message {
     protected byte[] fileId = null;
     protected Integer chunkNo = null;
     protected Integer replicationDegree = null;
+    protected byte[] data = null; // the raw chunk data
 
     /**
      * 
@@ -220,6 +222,7 @@ public abstract class Message {
     }
 
 //#region Getters and Setters
+    
     /**
      * @return the messageType
      */
@@ -265,10 +268,29 @@ public abstract class Message {
 
     @Override
     public String toString() {
-        return String.format(
-            "Message\n\tType: %s\n\tVersion: %s\n\tSender: %s\n",
+        String s = String.format(
+            "Message\n\tType: %s\n\tVersion: %s\n\tSender: %s",
             this.messageType.toString(),
             this.version,
             this.senderId);
+        
+        // append optional fields
+        if(fileId != null)
+            s += String.format("\n\tFileId: %s", Hash.getHexHash(this.fileId));
+
+        if(this.chunkNo != null)
+            s += String.format("\n\tChunkNo: %d", this.chunkNo);
+        
+        if(this.replicationDegree != null)
+            s += String.format("\n\tReplicationDegree: %d", this.replicationDegree);
+        
+        if(this.data != null) {
+            String data = Hash.getHexHash(this.data);
+            s += String.format("\n\tData: %s...\n\tData Size: %s", 
+                data.substring(0, Math.min(15, data.length())),
+                data.length());
+        }
+
+        return s;
     }
 }
