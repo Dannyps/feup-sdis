@@ -152,6 +152,16 @@ public abstract class Message {
 
         return buf.toByteArray();
     }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                 + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
     
     /**
      * Parses the file id encoded in the messages
@@ -197,7 +207,7 @@ public abstract class Message {
         Integer replicationDegree;
 
         if(fields[0].equals(MessageType.PUTCHUNK.toString())) {
-            fileId = Message.parseFileId(fields[3].getBytes());
+            fileId = Message.hexStringToByteArray(fields[3]);//Message.parseFileId(fields[3].getBytes());
             chunkNo = Integer.parseInt(fields[4]);
             replicationDegree = Integer.parseInt(fields[5]);
             byte[] data = (fields[6].split("\r\n\r\n")[1]).getBytes(StandardCharsets.US_ASCII);
