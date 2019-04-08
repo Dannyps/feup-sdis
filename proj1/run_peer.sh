@@ -16,4 +16,4 @@ fi
 
 # Launch peer
 ARG_LIST="$PROTOCOL_VERSION $PEER_ID $PEER_AP $MC_ADDR $MCB_ADDR $MCR_ADDR"
-java -cp "bin/" Peer $ARG_LIST
+java -cp "bin/" Shared.Peer $ARG_LIST

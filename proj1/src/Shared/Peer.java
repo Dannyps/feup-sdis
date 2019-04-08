@@ -1,3 +1,5 @@
+package Shared;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
@@ -8,10 +10,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import Listeners.MDBListen;
 import Messages.PutChunkMessage;
-import Utils.AddrPort;
-import Utils.ConsoleColours;
-import Utils.Chunk;
-import Utils.RegularFile;
+import Utils.*;
 
 public class Peer implements RMIRemote {
 	private String serviceAP;
@@ -25,7 +24,37 @@ public class Peer implements RMIRemote {
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
 
-	public Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
+	// static variable single_instance of type Singleton
+	private static Peer single_instance = null;
+
+	// static method to create instance of Singleton class
+	public static Peer getInstance() {
+		return single_instance; /* an unninitialized peer should not be instantiated. */
+	}
+
+	/**
+	 * @return the mdrSocket
+	 */
+	public MulticastSocket getMdbSocket() {
+		return mdbSocket;
+	}
+
+	/**
+	 * @return the mdrSocket
+	 */
+	public MulticastSocket getMdrSocket() {
+		return mdrSocket;
+	}
+
+	/**
+	 * @return the mdrSocket
+	 */
+	public MulticastSocket getMcSocket() {
+		return mcSocket;
+	}
+
+
+	private Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
 			String serviceAP) {
 		this.registry = registry;
 		this.MC = mC;
@@ -111,6 +140,7 @@ public class Peer implements RMIRemote {
 			try {
 				Registry registry = LocateRegistry.getRegistry();
 				Peer obj = new Peer(registry, MC, MDB, MDR, protocolVersion, serverId, serviceAP);
+				single_instance = obj;
 				RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
 
 				// Bind the remote object's stub in the registry

@@ -1,4 +1,6 @@
-class ProtocolVersion {
+package Utils;
+
+public class ProtocolVersion {
     private String v;
 
     public ProtocolVersion(String v) throws Exception {

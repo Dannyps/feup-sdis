@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import Messages.Message;
 import Messages.PutChunkMessage;
+import Shared.Peer;
 import Utils.Constants;
 
 /**
@@ -72,7 +73,7 @@ public class MDBListen implements Runnable {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            System.out.println("["+Thread.currentThread().getName()+"] here I must write the chunck to disk!");
+            System.out.println("["+Thread.currentThread().getName()+"] here I must write the chunck to disk!"+ Peer.getInstance().getMcSocket().getLocalPort());
         }
     }
 
