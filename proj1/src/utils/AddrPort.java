@@ -30,7 +30,7 @@ public class AddrPort {
         return address;
     }
 
-    InetAddress getAddressINA() throws UnknownHostException {
+    public InetAddress getInetAddress() throws UnknownHostException {
         return InetAddress.getByName(address);
     }
 

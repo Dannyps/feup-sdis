@@ -48,7 +48,8 @@ public class Peer implements RMIRemote {
 
 	private void bindToMC() {
 		try {
-			this.mcSocket = new MulticastSocket(MC.getInetSocketAddress());
+			this.mcSocket = new MulticastSocket(MC.getPort());
+			this.mcSocket.joinGroup(MC.getInetAddress());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -57,7 +58,8 @@ public class Peer implements RMIRemote {
 
 	private void bindToMDB() {
 		try {
-			this.mdbSocket = new MulticastSocket(MDB.getInetSocketAddress());
+			this.mdbSocket = new MulticastSocket(MDB.getPort());
+			this.mdbSocket.joinGroup(MDB.getInetAddress());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -66,7 +68,8 @@ public class Peer implements RMIRemote {
 
 	private void bindToMDR() {
 		try {
-			this.mdrSocket = new MulticastSocket(MDR.getInetSocketAddress());
+			this.mdrSocket = new MulticastSocket(MDR.getPort());
+			this.mdrSocket.joinGroup(MDR.getInetAddress());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -93,6 +96,7 @@ public class Peer implements RMIRemote {
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to open " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return 0;
