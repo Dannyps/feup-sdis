@@ -118,8 +118,10 @@ public class RegularFile {
                 ret = file.read(b, 0, sizeToRead);
                 
                 // Check for read failure (unexpected EOF)
-                if(ret == -1)
+                if(ret == -1){
+                    file.close();
                     throw new Exception("Ops"); // TODO
+                }
                 
                 // Update remaining file size to read
                 remainingSize -= ret;

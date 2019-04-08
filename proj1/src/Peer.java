@@ -1,17 +1,12 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import Listeners.MDBListen;
-import Messages.Message;
 import Messages.PutChunkMessage;
 import Utils.AddrPort;
 import Utils.ConsoleColours;
@@ -40,7 +35,7 @@ public class Peer implements RMIRemote {
 		this.serverId = serverId;
 		this.serviceAP = serviceAP;
 
-		this.mcSocket  = bindToMultiCast(MC);
+		this.mcSocket = bindToMultiCast(MC);
 		this.mdbSocket = bindToMultiCast(MDB);
 		this.mdrSocket = bindToMultiCast(MDR);
 
@@ -55,7 +50,7 @@ public class Peer implements RMIRemote {
 		} catch (SocketException e) {
 			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
 			System.exit(6);
-		} catch(IOException e){
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return s;
@@ -124,7 +119,7 @@ public class Peer implements RMIRemote {
 				System.err.println("Peer ready on " + serviceAP);
 
 				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
-				Thread mdbThread = new Thread (mdbRunnable);
+				Thread mdbThread = new Thread(mdbRunnable);
 				mdbThread.start();
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());

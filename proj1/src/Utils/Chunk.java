@@ -1,8 +1,6 @@
 package Utils;
 
-import java.io.Serializable;
-
-public class Chunk implements Serializable {
+public class Chunk {
     private byte[] fileID;
     private Integer chunkNo;
     private Integer replicationDegree;
