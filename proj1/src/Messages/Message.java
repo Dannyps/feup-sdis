@@ -263,6 +263,13 @@ public abstract class Message {
     }
 
     /**
+     * @return the file id as a string in hexadecimal format
+     */
+    public String getFileIdHexStr() {
+        return Hash.getHexHash(this.fileId);
+    }
+
+    /**
      * @return the chunkNo
      */
     public Integer getChunkNo() {
