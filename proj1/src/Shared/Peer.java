@@ -8,6 +8,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.TreeSet;
 import Listeners.MDBListen;
 import Messages.PutChunkMessage;
 import Utils.*;
@@ -17,13 +19,15 @@ public class Peer implements RMIRemote {
 	private Registry registry;
 	private AddrPort MC;
 	private AddrPort MDB;
+	private AddrPort MDR;
 	private ProtocolVersion protoVer;
 	private Integer serverId;
-	private AddrPort MDR;
 	private MulticastSocket mcSocket;
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
-
+	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who stored the chunk
+	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
+	
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
 
@@ -81,6 +85,32 @@ public class Peer implements RMIRemote {
 		return this.serverId;
 	}
 
+	/**
+	 * 
+	 * @param fileId
+	 * @param chunkNo
+	 * @param peerId
+	 */
+	public void chunkStored(String fileId, Integer chunkNo, Integer peerId) {
+		// check if there's some reference to the said file
+		HashMap<Integer, TreeSet<Integer>> fileChunks = this.storedChunks.get(fileId);
+		if(fileChunks == null) {
+			fileChunks = new HashMap<Integer, TreeSet<Integer>>();
+			this.storedChunks.put(fileId, fileChunks);
+		}
+			
+		
+		// check if there's a reference to the said chunk
+		TreeSet<Integer> peers = fileChunks.get(chunkNo);
+		if(peers == null) {
+			peers = new TreeSet<Integer>();
+			fileChunks.put(chunkNo, peers);
+		}
+			
+		// store the peer id in the set of peers who stored this tuple (fileid, chunkno)
+		peers.add(peerId);
+	}
+
 
 	private Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
 			String serviceAP) {
@@ -95,6 +125,8 @@ public class Peer implements RMIRemote {
 		this.mcSocket = bindToMultiCast(MC);
 		this.mdbSocket = bindToMultiCast(MDB);
 		this.mdrSocket = bindToMultiCast(MDR);
+
+		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 
 		System.out.println("[INFO] Bound to all three sockets successfully.");
 	}
