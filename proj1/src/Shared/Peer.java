@@ -10,6 +10,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeSet;
+
+import Listeners.MCListen;
 import Listeners.MDBListen;
 import Messages.PutChunkMessage;
 import Utils.*;
@@ -207,7 +209,13 @@ public class Peer implements RMIRemote {
 				registry.rebind(serviceAP, stub);
 
 				System.err.println("Peer ready on " + serviceAP);
+				
+				// launch backup multicast channel listener
+				MCListen mcRunnable = new MCListen(obj.mcSocket);
+				Thread mcThread = new Thread(mcRunnable);
+				mcThread.start();
 
+				// launch backup multicast channel listener
 				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
 				Thread mdbThread = new Thread(mdbRunnable);
 				mdbThread.start();
