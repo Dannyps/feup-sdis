@@ -33,6 +33,27 @@ public class Peer implements RMIRemote {
 	}
 
 	/**
+	 * @return the multicast channel address
+	 */
+	public AddrPort getAddrMC() {
+		return MC;
+	}
+
+	/**
+	 * @return the multicast channel address
+	 */
+	public AddrPort getAddrMDB() {
+		return MDB;
+	}
+
+	/**
+	 * @return the multicast channel address
+	 */
+	public AddrPort getAddrMDR() {
+		return MDR;
+	}
+
+	/**
 	 * @return the mdrSocket
 	 */
 	public MulticastSocket getMdbSocket() {
