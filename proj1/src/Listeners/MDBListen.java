@@ -3,6 +3,7 @@ package Listeners;
 import java.net.MulticastSocket;
 import Messages.Message;
 import Messages.PutChunkMessage;
+import Utils.PrintMesssage;
 import Workers.PutChunkWorker;
 
 /**
@@ -22,7 +23,7 @@ public class MDBListen extends ChannelListener{
     protected void newMessageHandler(Message msg) {
         // ignore self messages
         if(msg.getSenderId() != this.serverId) {
-            System.err.println("[Received message] " + msg);
+            PrintMesssage.p("Received", msg);
             PutChunkWorker w = new PutChunkWorker((PutChunkMessage) msg);
             executor.submit(w);
         }

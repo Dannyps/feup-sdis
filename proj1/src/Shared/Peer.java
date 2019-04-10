@@ -32,12 +32,13 @@ public class Peer implements RMIRemote {
 	private MulticastSocket mcSocket;
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
-	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who stored the chunk
+	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who
+	// stored the chunk
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
-	
+
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
-	
+
 	ExecutorService executor;
 
 	// static method to create instance of Singleton class
@@ -103,6 +104,7 @@ public class Peer implements RMIRemote {
 
 	/**
 	 * Returns a list of peers identifiers which stored the pair (fileId, ChunkNo)
+	 * 
 	 * @param fileId
 	 * @param ChunkNo
 	 * @return
@@ -110,7 +112,8 @@ public class Peer implements RMIRemote {
 	public TreeSet<Integer> getPeersContainChunk(String fileId, Integer ChunkNo) {
 		// get all stored chunks for the file
 		HashMap<Integer, TreeSet<Integer>> chunks = this.storedChunks.get(fileId);
-		if(chunks == null) return null;
+		if (chunks == null)
+			return null;
 		// get list of peers who stored the specified chunk
 		return chunks.get(ChunkNo);
 	}
@@ -124,23 +127,21 @@ public class Peer implements RMIRemote {
 	public void chunkStored(String fileId, Integer chunkNo, Integer peerId) {
 		// check if there's some reference to the said file
 		HashMap<Integer, TreeSet<Integer>> fileChunks = this.storedChunks.get(fileId);
-		if(fileChunks == null) {
+		if (fileChunks == null) {
 			fileChunks = new HashMap<Integer, TreeSet<Integer>>();
 			this.storedChunks.put(fileId, fileChunks);
 		}
-			
-		
+
 		// check if there's a reference to the said chunk
 		TreeSet<Integer> peers = fileChunks.get(chunkNo);
-		if(peers == null) {
+		if (peers == null) {
 			peers = new TreeSet<Integer>();
 			fileChunks.put(chunkNo, peers);
 		}
-			
+
 		// store the peer id in the set of peers who stored this tuple (fileid, chunkno)
 		peers.add(peerId);
 	}
-
 
 	private Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
 			String serviceAP) {
@@ -160,8 +161,9 @@ public class Peer implements RMIRemote {
 
 		// instatiate thread pool
 		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-		
+
 		System.out.println("[INFO] Bound to all three sockets successfully.");
+		PrintMesssage.printMessages = true;
 	}
 
 	MulticastSocket bindToMultiCast(AddrPort ap) {
@@ -236,7 +238,7 @@ public class Peer implements RMIRemote {
 				registry.rebind(serviceAP, stub);
 
 				System.err.println("Peer ready on " + serviceAP);
-				
+
 				// launch backup multicast channel listener
 				MCListen mcRunnable = new MCListen(obj.mcSocket);
 				Thread mcThread = new Thread(mcRunnable);

@@ -8,6 +8,7 @@ import Messages.PutChunkMessage;
 import Shared.Peer;
 import Utils.Chunk;
 import Utils.ConsoleColours;
+import Utils.PrintMesssage;
 
 public class BackupWorker implements Runnable {
     private String protocolVersion;
@@ -53,7 +54,7 @@ public class BackupWorker implements Runnable {
                         numberTries+1
                     ) + ConsoleColours.RESET
                 );
-                System.err.println("[Sent message] " + msg);
+                PrintMesssage.p("Sent", msg);
             } catch (IOException e) {
                 e.printStackTrace();
             }

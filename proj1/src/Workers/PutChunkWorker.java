@@ -9,6 +9,7 @@ import Messages.PutChunkMessage;
 import Messages.StoredMessage;
 import Shared.Peer;
 import Utils.Hash;
+import Utils.PrintMesssage;
 
 public class PutChunkWorker implements Runnable {
     PutChunkMessage msg;
@@ -58,7 +59,7 @@ public class PutChunkWorker implements Runnable {
             DatagramPacket dp = storedMsg.getDatagramPacket();
             dp.setSocketAddress(Peer.getInstance().getAddrMC().getInetSocketAddress());
             Peer.getInstance().getMcSocket().send(dp);
-            System.out.println("[Sent message] " + msg);
+            PrintMesssage.p("Sent", msg);
         } catch (IOException e) {
             e.printStackTrace();
         }
