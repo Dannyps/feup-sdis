@@ -102,6 +102,20 @@ public class Peer implements RMIRemote {
 	}
 
 	/**
+	 * Returns a list of peers identifiers which stored the pair (fileId, ChunkNo)
+	 * @param fileId
+	 * @param ChunkNo
+	 * @return
+	 */
+	public TreeSet<Integer> getPeersContainChunk(String fileId, Integer ChunkNo) {
+		// get all stored chunks for the file
+		HashMap<Integer, TreeSet<Integer>> chunks = this.storedChunks.get(fileId);
+		if(chunks == null) return null;
+		// get list of peers who stored the specified chunk
+		return chunks.get(ChunkNo);
+	}
+
+	/**
 	 * 
 	 * @param fileId
 	 * @param chunkNo
