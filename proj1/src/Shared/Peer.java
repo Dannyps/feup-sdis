@@ -37,7 +37,7 @@ public class Peer implements RMIRemote {
 	
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
-
+	
 	ExecutorService executor;
 
 	// static method to create instance of Singleton class
