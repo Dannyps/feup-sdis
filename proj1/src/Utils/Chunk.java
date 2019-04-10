@@ -32,6 +32,13 @@ public class Chunk {
 	}
 
 	/**
+     * @return the file id as a string in hexadecimal format
+     */
+    public String getFileIdHexStr() {
+        return Hash.getHexHash(this.fileID);
+    }
+
+	/**
 	 * @return the chunkID
 	 */
 	public Integer getChunkNo() {
