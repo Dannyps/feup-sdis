@@ -10,11 +10,16 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import Listeners.MCListen;
 import Listeners.MDBListen;
 import Messages.PutChunkMessage;
 import Utils.*;
+import Workers.BackupWorker;
 
 public class Peer implements RMIRemote {
 	private String serviceAP;
@@ -32,6 +37,8 @@ public class Peer implements RMIRemote {
 	
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
+
+	ExecutorService executor;
 
 	// static method to create instance of Singleton class
 	public static Peer getInstance() {
@@ -89,6 +96,13 @@ public class Peer implements RMIRemote {
 
 	/**
 	 * 
+	 */
+	public String getProtocolVersion() {
+		return this.protoVer.getV();
+	}
+
+	/**
+	 * 
 	 * @param fileId
 	 * @param chunkNo
 	 * @param peerId
@@ -130,6 +144,9 @@ public class Peer implements RMIRemote {
 
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 
+		// instatiate thread pool
+		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+		
 		System.out.println("[INFO] Bound to all three sockets successfully.");
 	}
 
@@ -159,11 +176,7 @@ public class Peer implements RMIRemote {
 			lst = f.getChunks();
 			for (Chunk c : lst) {
 				System.err.println("[Created chunk] " + c);
-				PutChunkMessage msg = new PutChunkMessage(this.protoVer.getV(), this.serverId, c);
-				byte[] rawMsg = msg.getMessage();
-				DatagramPacket dp = new DatagramPacket(rawMsg, rawMsg.length, MDB.getInetSocketAddress());
-				this.mdbSocket.send(dp);
-				System.err.println("[Sent message] " + msg);
+				this.executor.submit(new BackupWorker(c));
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to open " + e.getMessage());
