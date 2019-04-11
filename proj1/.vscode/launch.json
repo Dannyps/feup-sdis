@@ -17,7 +17,7 @@
             "request": "launch",
             "mainClass": "Shared.Peer",
             "projectName": "proj1",
-            "args": "1.0 1 peer_1 224.0.0.1:8001 224.0.0.1:8002 224.0.0.1:8003"
+            "args": "1.0 1 peer_1 224.0.0.1:8001 224.0.0.2:8002 224.0.0.3:8003"
         },
         {
             "type": "java",
