@@ -2,7 +2,10 @@ package Shared;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -174,8 +177,10 @@ public class Peer implements RMIRemote {
 		} catch (SocketException e) {
 			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
 			System.exit(6);
-		} catch (IOException e) {
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(6);
 		}
 		return s;
 	}

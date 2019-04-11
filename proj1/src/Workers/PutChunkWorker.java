@@ -37,7 +37,7 @@ public class PutChunkWorker implements Runnable {
         // Create file for the chunk
         // TODO what if the chunk already exists? Does the protocol say something
         // regarding this?
-        Path filePath = Paths.get(dir + String.format("//%05d",this.msg.getChunkNo()));
+        Path filePath = Paths.get(dir + String.format("/%05d",this.msg.getChunkNo()));
         try {
             Files.write(filePath, this.msg.getRawData());
         } catch (IOException e) {
