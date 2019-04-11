@@ -9,6 +9,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -30,6 +31,7 @@ public class Peer implements RMIRemote {
 	private MulticastSocket mcSocket;
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
+	public ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
 	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who
 	// stored the chunk
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
@@ -155,6 +157,8 @@ public class Peer implements RMIRemote {
 		this.mdbSocket = bindToMultiCast(MDB);
 		this.mdrSocket = bindToMultiCast(MDR);
 
+		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>();
+
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 
 		// instatiate thread pool
@@ -183,12 +187,15 @@ public class Peer implements RMIRemote {
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
+		
+		this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileIdHexStr(), f.getReplicationDegree()));
 
 		try {
 			lst = f.getChunks();
+			int i = 0;
 			for (Chunk c : lst) {
 				PrintMesssage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-				this.executor.submit(new BackupWorker(c));
+				this.executor.submit(new BackupWorker(filename, c, i++));
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to open " + e.getMessage());
@@ -265,5 +272,9 @@ public class Peer implements RMIRemote {
 					.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
 			System.exit(-1);
 		}
+	}
+
+	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
+		return myBackedUpFiles;
 	}
 }
