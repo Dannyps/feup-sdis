@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 import Utils.Hash;
 
 public abstract class Message {
@@ -199,13 +201,24 @@ public abstract class Message {
      * @throws Exception
      */
     public static Message parseMessage(byte[] msg) throws Exception {
-        String str = new String(msg, StandardCharsets.US_ASCII);
-        // Split message in head and body
-        String head = str.split("\r\n\r\n", 2)[0];
-        String body = str.split("\r\n\r\n", 2)[1];
+        // find the index of the sequence \r\n\r\n
+        boolean foundSeq = false;
+        int i;
+        for(i = 0; i < msg.length - 3 && !foundSeq;) {
+            if(msg[i] == '\r' && msg[i+1] == '\n' && msg[i+2] == '\r' && msg[i+3] == '\n')
+                foundSeq = true;
+            else
+                i++;
+        }
+
+        // split head and body
+        byte[] headRaw = Arrays.copyOf(msg, i-1);
+        byte[] bodyRaw = Arrays.copyOfRange(msg, i+4, msg.length);
+
         // Split head in fields
-        String[] headFields = head.split(" ");
+        String[] headFields = new String(headRaw, StandardCharsets.US_ASCII).split(" ");
         
+        // get the message type
         String msgType = headFields[0];
         
         /** all possible fields */
@@ -219,8 +232,7 @@ public abstract class Message {
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             replicationDegree = Integer.parseInt(headFields[5]);
-            byte[] data = body.getBytes(StandardCharsets.US_ASCII);
-            return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, data);
+            return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, bodyRaw);
         } else if(msgType.equals(MessageType.STORED.toString())) {
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
