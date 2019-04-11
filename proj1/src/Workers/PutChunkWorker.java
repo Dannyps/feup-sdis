@@ -8,8 +8,8 @@ import java.nio.file.Paths;
 import Messages.PutChunkMessage;
 import Messages.StoredMessage;
 import Shared.Peer;
-import Utils.Hash;
 import Utils.PrintMesssage;
+import Utils.ServiceFileSystem;
 
 public class PutChunkWorker implements Runnable {
     PutChunkMessage msg;
@@ -21,15 +21,13 @@ public class PutChunkWorker implements Runnable {
 
     @Override
     public void run() {
-        String dir = String.format("peer%d/%s", this.peer.getPeerId(), Hash.getHexHash(this.msg.getFileId()));
         // create directory <file id> if folder doesn't exist
-        Path dirPath = Paths.get(dir);
+        Path dirPath = Paths.get(ServiceFileSystem.getBackupFilePath(this.msg.getFileIdHexStr()));
 
         if (!Files.exists(dirPath)) {
             try {
                 Files.createDirectories(dirPath);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -37,11 +35,10 @@ public class PutChunkWorker implements Runnable {
         // Create file for the chunk
         // TODO what if the chunk already exists? Does the protocol say something
         // regarding this?
-        Path filePath = Paths.get(dir + String.format("/%05d",this.msg.getChunkNo()));
+        Path filePath = Paths.get(ServiceFileSystem.getBackupChunkPath(this.msg.getFileIdHexStr(), this.msg.getChunkNo()));
         try {
             Files.write(filePath, this.msg.getRawData());
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -49,7 +46,6 @@ public class PutChunkWorker implements Runnable {
         try {
             Thread.sleep((long) (Math.random() * 400));
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
