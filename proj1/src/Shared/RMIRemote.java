@@ -42,8 +42,6 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface RMIRemote extends Remote {
-    String sayHello() throws RemoteException;
-
     int backup(String filename, int replicationDegree) throws RemoteException;
 
     int restore(String filename) throws RemoteException;
