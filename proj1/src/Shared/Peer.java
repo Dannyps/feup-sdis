@@ -180,10 +180,6 @@ public class Peer implements RMIRemote {
 		return s;
 	}
 
-	public String sayHello() {
-		return "Hello, world!";
-	}
-
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
@@ -191,7 +187,7 @@ public class Peer implements RMIRemote {
 		try {
 			lst = f.getChunks();
 			for (Chunk c : lst) {
-				System.err.println("[Created chunk] " + c);
+				PrintMesssage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
 				this.executor.submit(new BackupWorker(c));
 			}
 		} catch (IOException e) {
