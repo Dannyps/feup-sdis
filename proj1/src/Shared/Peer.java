@@ -24,6 +24,7 @@ import Messages.Message;
 import Messages.MessageType;
 import Utils.*;
 import Workers.BackupWorker;
+import Workers.ChunkReceiverWatcher;
 import Workers.RestoreWorker;
 
 public class Peer implements RMIRemote {
@@ -174,7 +175,7 @@ public class Peer implements RMIRemote {
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 
 		// instatiate thread pool
-		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 		System.out.println("[INFO] Bound to all three sockets successfully.");
 		PrintMessage.printMessages = true;
@@ -240,13 +241,18 @@ public class Peer implements RMIRemote {
 			 * Keep track of all threads launched in order to restore the chunks. When all
 			 * of them have ended successfully, we can reconstitute the file.
 			 */
+			// TODO no longer needed
 			ArrayList<Future<Integer>> taskList = new ArrayList<Future<Integer>>();
 
 			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
 				GetChunkMessage msg = new GetChunkMessage(this.protoVer.getV(), this.serverId, fileId, cno);
 				PrintMessage.p("Created GETCHUNK", msg.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-				taskList.add(this.executor.submit(new RestoreWorker(msg, cno, chunkList)));
+				this.executor.submit(new RestoreWorker(msg, cno, chunkList));
 			}
+
+			ChunkReceiverWatcher watcher = new ChunkReceiverWatcher(fi);
+			Thread t = new Thread(watcher);
+			t.start();
 		} catch (Exception e) {
 			return -1;
 		}

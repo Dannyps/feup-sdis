@@ -14,7 +14,8 @@ import Utils.ConsoleColours;
 import Utils.FileInfo;
 import Utils.PrintMessage;
 
-public class RestoreWorker implements Callable<Integer> {
+// does it make sense to be callable?
+public class RestoreWorker implements Runnable {
     private String protocolVersion;
     private Integer serverId;
     private Chunk chunk;
@@ -26,8 +27,20 @@ public class RestoreWorker implements Callable<Integer> {
     /**
      * @param msg       the pre-built message to send
      * @param chunkNo   the number of the chunk to recover
+     */
+    public RestoreWorker(GetChunkMessage msg, int chunkNo) {
+        this.peer = Peer.getInstance(); // get a reference to the singleton peer
+        this.protocolVersion = this.peer.getProtocolVersion();
+        this.serverId = this.peer.getPeerId();
+        this.msg = msg;
+    }
+
+    /**
+     * @param msg       the pre-built message to send
+     * @param chunkNo   the number of the chunk to recover
      * @param chunkList the ArrayList of chunks where to deposit the received chunk.
      */
+    @Deprecated
     public RestoreWorker(GetChunkMessage msg, int chunkNo, ArrayList<Chunk> chunkList) {
         this.peer = Peer.getInstance(); // get a reference to the singleton peer
         this.protocolVersion = this.peer.getProtocolVersion();
@@ -36,7 +49,7 @@ public class RestoreWorker implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws Exception {
+    public void run() {
         // Get the raw message
         byte[] rawMsg = msg.getMessage();
         // create the datagram
@@ -51,7 +64,5 @@ public class RestoreWorker implements Callable<Integer> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        return 0;
     }
 }

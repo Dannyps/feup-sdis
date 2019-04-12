@@ -16,6 +16,9 @@ import Utils.ConsoleColours;
 import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
 
+/**
+ * Handles the reception of a CHUNK message through the MDR channel
+ */
 public class ChunkReceiverWorker implements Runnable {
     ChunkMessage msg;
     Peer peer;
@@ -35,7 +38,7 @@ public class ChunkReceiverWorker implements Runnable {
      */
     public void run() {
 
-        PrintMessage.p("CHUNK", "received the following: " + msg.getFileIdHexStr() + msg.getChunkNo(),
+        PrintMessage.p("CHUNK", "received the following: " + msg.getFileIdHexStr() + "\tChunkNo:" + msg.getChunkNo(),
                 ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
         ConcurrentHashMap<Integer, Long> thisFilesChunks = this.receivedChunkInfo.get(msg.getFileIdHexStr());
 
