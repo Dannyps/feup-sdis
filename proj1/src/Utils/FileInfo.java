@@ -1,7 +1,6 @@
 package Utils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -14,7 +13,7 @@ public class FileInfo implements Serializable {
     // The original filename from whom this chunk belongs to
     String filename;
     // the file identifier hash as hexadecimal string
-    String fileIdHex;
+    byte[] fileIdHex;
     // the replication degree (specified when the backup was made)
     int rdegree = 0;
     // information about this file's chunks
@@ -26,7 +25,7 @@ public class FileInfo implements Serializable {
      * @param fileIdHex The hexadecimal file hash string
      * @param chunkNo   The amount of chunks needed for this file
      */
-    public FileInfo(String filename, String fileIdHex, int rdegree) {
+    public FileInfo(String filename, byte[] fileIdHex, int rdegree) {
         this.filename = filename;
         this.fileIdHex = fileIdHex;
         this.rdegree = rdegree;
@@ -49,4 +48,15 @@ public class FileInfo implements Serializable {
     public int getRdegree() {
         return rdegree;
     }
+    
+    /**
+     * @return the filename
+     */
+    public String getFilename() {
+        return filename;
+    }
+
+	public byte[] getFileId() {
+		return fileIdHex;
+	}
 }

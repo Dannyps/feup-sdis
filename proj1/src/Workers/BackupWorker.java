@@ -9,7 +9,7 @@ import Shared.Peer;
 import Utils.Chunk;
 import Utils.ConsoleColours;
 import Utils.FileInfo;
-import Utils.PrintMesssage;
+import Utils.PrintMessage;
 
 public class BackupWorker implements Runnable {
     private String protocolVersion;
@@ -55,7 +55,7 @@ public class BackupWorker implements Runnable {
                         + String.format("Sent putchunk (fileId,chunk) (%s, %d). Attempt : %d",
                                 this.chunk.getFileIdHexStr(), this.chunk.getChunkNo(), numberTries + 1)
                         + ConsoleColours.RESET);
-                PrintMesssage.p("Sent", msg);
+                PrintMessage.p("Sent", msg);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -110,6 +110,6 @@ public class BackupWorker implements Runnable {
                 ) + ConsoleColours.RESET
             );
         }
-        PrintMesssage.p("Local info", "chunk " + chunkno + " got a replication degree of " + Integer.toString(fi.getChunks().get(chunkno)) + ". Desired: "+Integer.toString(fi.getRdegree()), ConsoleColours.PURPLE_BOLD_BRIGHT, ConsoleColours.PURPLE_BRIGHT);
+        PrintMessage.p("Local info", "File: "+ fi.getFilename() +" chunk " + chunkno + " got a replication degree of " + Integer.toString(fi.getChunks().get(chunkno)) + ". Desired: "+Integer.toString(fi.getRdegree()), ConsoleColours.PURPLE_BOLD_BRIGHT, ConsoleColours.PURPLE_BRIGHT);
     }
 }

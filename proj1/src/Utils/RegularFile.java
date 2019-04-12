@@ -47,6 +47,13 @@ public class RegularFile {
     }
 
     /**
+     * @return the fileID
+     */
+    public byte[] getFileID() {
+        return fileID;
+    }
+
+    /**
      * Loads the required file attributes
      * 
      * @throws IOException
@@ -157,7 +164,7 @@ public class RegularFile {
         return chunks;
     }
 
-    byte[] getFileId() throws IOException {
+    public byte[] getFileId() throws IOException {
         if (this.fileID == null)
             getFileHash();
         return this.fileID;

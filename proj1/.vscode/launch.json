@@ -24,6 +24,7 @@
             "name": "Debug (Launch)-TestApp<proj1>",
             "request": "launch",
             "mainClass": "TestApp",
+            "args": "peer_23 RESTORE 57s",
             "projectName": "proj1"
         }
     ]

@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 import Listeners.MCListen;
 import Listeners.MDBListen;
+import Messages.GetChunkMessage;
+import Messages.Message;
+import Messages.MessageType;
 import Utils.*;
 import Workers.BackupWorker;
 
@@ -165,7 +168,7 @@ public class Peer implements RMIRemote {
 		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 		System.out.println("[INFO] Bound to all three sockets successfully.");
-		PrintMesssage.printMessages = true;
+		PrintMessage.printMessages = true;
 	}
 
 	MulticastSocket bindToMultiCast(AddrPort ap) {
@@ -188,13 +191,18 @@ public class Peer implements RMIRemote {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
 		
-		this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileIdHexStr(), f.getReplicationDegree()));
+		try {
+			this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(), f.getReplicationDegree()));
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 		try {
 			lst = f.getChunks();
 			int i = 0;
 			for (Chunk c : lst) {
-				PrintMesssage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
+				PrintMessage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
 				this.executor.submit(new BackupWorker(filename, c, i++));
 			}
 		} catch (IOException e) {
@@ -206,6 +214,16 @@ public class Peer implements RMIRemote {
 	}
 
 	public int restore(String filename) {
+		try {
+			FileInfo fi = this.myBackedUpFiles.get(filename);
+			byte[] fileId = fi.getFileId();
+			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
+				GetChunkMessage msg = new GetChunkMessage(this.protoVer.toString(), this.serverId, fileId, cno);
+			}
+		} catch (Exception e) {
+			return -1;
+		}
+
 		return 0;
 	}
 

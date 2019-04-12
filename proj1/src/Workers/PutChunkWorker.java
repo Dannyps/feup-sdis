@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import Messages.PutChunkMessage;
 import Messages.StoredMessage;
 import Shared.Peer;
-import Utils.PrintMesssage;
+import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
 
 public class PutChunkWorker implements Runnable {
@@ -55,7 +55,7 @@ public class PutChunkWorker implements Runnable {
             DatagramPacket dp = storedMsg.getDatagramPacket();
             dp.setSocketAddress(Peer.getInstance().getAddrMC().getInetSocketAddress());
             Peer.getInstance().getMcSocket().send(dp);
-            PrintMesssage.p("Sent", msg);
+            PrintMessage.p("Sent", msg);
         } catch (IOException e) {
             e.printStackTrace();
         }

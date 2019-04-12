@@ -6,6 +6,7 @@ import java.rmi.registry.Registry;
 
 import Shared.RMIRemote;
 import Utils.ConsoleColours;
+import Utils.PrintMessage;
 
 /**
  * Client Interface
@@ -42,6 +43,7 @@ public class TestApp {
 	 * 
 	 */
 	public static void main(String[] args) {
+		PrintMessage.printMessages = true;
 		Runtime.getRuntime().addShutdownHook(shutDownThread);
 		int nargs = args.length;
 		if (nargs < 2) {
@@ -104,13 +106,20 @@ public class TestApp {
 					+ ConsoleColours.RESET + ConsoleColours.RED_BOLD + ".");
 			System.exit(-1);
 		}
-		stub.backup(args[2], Integer.parseInt(args[3]));
+		int b = stub.backup(args[2], Integer.parseInt(args[3]));
+		if (b == 0) {
+			PrintMessage.p("Success", "The backup thread has been launched successfully.");
+		}
 		return true;
 	}
 
 	private static boolean restore(RMIRemote stub, String[] args) throws RemoteException {
 		checkArgs(args, "file_name");
-		stub.restore(args[2]);
+		int r = stub.restore(args[2]);
+		if (r == -1) {
+			PrintMessage.p("Error", "The requested file (" + args[2] + ") was not found!", ConsoleColours.RED_BOLD,
+					ConsoleColours.RED);
+		}
 		return true;
 	}
 
@@ -136,9 +145,6 @@ public class TestApp {
 		int nargs = args.length;
 		if (nargs != 3) {
 			System.err.println(ConsoleColours.RED_BOLD + "[FATAL] Expected 1 argument, got " + (nargs - 2) + "!");
-			System.err.println(
-					ConsoleColours.RED_BOLD + "DELETE requires one argument: " + ConsoleColours.BLUE_BACKGROUND_BRIGHT
-							+ required + ConsoleColours.RESET + ConsoleColours.RED_BOLD + ".");
 			System.exit(-1);
 		}
 	}
