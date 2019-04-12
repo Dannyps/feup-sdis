@@ -38,12 +38,12 @@ public class ChunkReceiverWorker implements Runnable {
         PrintMessage.p("CHUNK", "received the following: " + msg.getFileIdHexStr() + msg.getChunkNo(),
                 ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
         ConcurrentHashMap<Integer, Long> thisFilesChunks = this.receivedChunkInfo.get(msg.getFileIdHexStr());
-        
+
         if (thisFilesChunks == null) {
             // file not yet in the hashmap. Add it.
             addFileAndChunk2HashMap();
 
-        }else{
+        } else {
             addChunk2HashMap(thisFilesChunks);
         }
         // "Store file"
@@ -51,6 +51,7 @@ public class ChunkReceiverWorker implements Runnable {
 
     private void addChunk2HashMap(ConcurrentHashMap<Integer, Long> thisFilesChunks) {
         thisFilesChunks.put(msg.getChunkNo(), this.messageArrivedAt);
+        this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
     }
 
     private void addFileAndChunk2HashMap() {
@@ -59,5 +60,13 @@ public class ChunkReceiverWorker implements Runnable {
         inner.put(msg.getChunkNo(), this.messageArrivedAt);
         // outer hashmap
         this.receivedChunkInfo.put(msg.getFileIdHexStr(), inner);
+        this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
+    }
+
+    private void scheduleRemoval(String fileIdHexStr, Integer chunkNo) {
+        /** TODO the entry added to this.receivedChunkInfo should be removed after, let's
+          * say, 5 seconds, so that the file can be recovered again (otherwise, it will
+          * just be found as sent by another peer, which may not even have anymore)
+          */
     }
 }
