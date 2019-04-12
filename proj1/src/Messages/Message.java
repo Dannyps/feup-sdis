@@ -32,7 +32,7 @@ public abstract class Message {
         this.senderId = senderId;
     }
 
-//#region String to 7-bit ASCII bytes util methods
+    // #region String to 7-bit ASCII bytes util methods
     /**
      * Converts a Java string to an array of bytes. Each byte represents a string
      * character in 7-bit ASCII format Note: Byte values are signed
@@ -101,28 +101,31 @@ public abstract class Message {
     protected byte[] getReplicationDegreeASCII_() {
         return this.stringToASCII_(this.replicationDegree.toString());
     }
-//#endregion
+    // #endregion
 
     /**
      * @return Returns the <CRLF> terminator sequence
      */
     protected byte[] getSequenceTerminator() {
-        return new byte[]{'\r', '\n'};
+        return new byte[] { '\r', '\n' };
     }
 
     /**
-     * Creates the header following the protocol specification. In addition to the mandatory/common fields between sub-protocols, it considers aditional not-null fields. It assumes the following sequence:
-     * <Message type> <Version> <SenderId> <FileId> <ChunkNo> <ReplDegree> <CRLF><CRLF>
+     * Creates the header following the protocol specification. In addition to the
+     * mandatory/common fields between sub-protocols, it considers aditional
+     * not-null fields. It assumes the following sequence: <Message type> <Version>
+     * <SenderId> <FileId> <ChunkNo> <ReplDegree> <CRLF><CRLF>
      * 
      * @return
      */
     protected byte[] createHeader() {
         // Dynamic byte buffer
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        
+
         // Generic format
-        // <Message type> <Version> <SenderId> <FileId> <ChunkNo> <ReplDegree> <CRLF><CRLF>
-        
+        // <Message type> <Version> <SenderId> <FileId> <ChunkNo> <ReplDegree>
+        // <CRLF><CRLF>
+
         try {
             // Mandatory fields
             buf.write(this.getMsgTypeASCII_());
@@ -130,20 +133,20 @@ public abstract class Message {
 
             buf.write(this.getVersionASCII_());
             buf.write(' ');
-            
+
             buf.write(this.getSenderIdASCII_());
             buf.write(' ');
-            
+
             buf.write(this.getFileIdASCII_());
             buf.write(' ');
 
             // Subprotocol required fields
-            if(this.chunkNo != null) {
+            if (this.chunkNo != null) {
                 buf.write(this.getChunkNoASCII_());
                 buf.write(' ');
             }
 
-            if(this.replicationDegree != null) {
+            if (this.replicationDegree != null) {
                 buf.write(this.getReplicationDegreeASCII_());
                 buf.write(' ');
             }
@@ -162,32 +165,33 @@ public abstract class Message {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                                 + Character.digit(s.charAt(i+1), 16));
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
-    
+
     /**
-     * Parses the file id encoded in the messages
-     * Each byte represents a single hexadecimal digit, resulting in 64 bytes ID
-     * This method reverts to the original 32 bytes SHA-256 format
+     * Parses the file id encoded in the messages Each byte represents a single
+     * hexadecimal digit, resulting in 64 bytes ID This method reverts to the
+     * original 32 bytes SHA-256 format
+     * 
      * @param encodedFileId
      * @return
      */
     protected static byte[] parseFileId(byte[] encodedFileId) {
         byte[] originalHash = new byte[32];
-        
-        for (int i = 0, j = 0; i < 64; i+=2, j++) {
-            char a = (char)encodedFileId[i], b = (char)encodedFileId[i+1];
-            originalHash[j] = (byte)((a << 4) | (b & 0x0f));
+
+        for (int i = 0, j = 0; i < 64; i += 2, j++) {
+            char a = (char) encodedFileId[i], b = (char) encodedFileId[i + 1];
+            originalHash[j] = (byte) ((a << 4) | (b & 0x0f));
         }
         return originalHash;
     }
 
     /**
-     * Returns the message bytes
-     * Note: Only the header is returned. Sub-protocols should override this method to include the body data
+     * Returns the message bytes Note: Only the header is returned. Sub-protocols
+     * should override this method to include the body data
+     * 
      * @return
      */
     public byte[] getMessage() {
@@ -196,6 +200,7 @@ public abstract class Message {
 
     /**
      * Parses a datagram packet and returns the corresponding message
+     * 
      * @param msg The datagram data
      * @return Message
      * @throws Exception
@@ -204,23 +209,23 @@ public abstract class Message {
         // find the index of the sequence \r\n\r\n
         boolean foundSeq = false;
         int i;
-        for(i = 0; i < msg.length - 3 && !foundSeq;) {
-            if(msg[i] == '\r' && msg[i+1] == '\n' && msg[i+2] == '\r' && msg[i+3] == '\n')
+        for (i = 0; i < msg.length - 3 && !foundSeq;) {
+            if (msg[i] == '\r' && msg[i + 1] == '\n' && msg[i + 2] == '\r' && msg[i + 3] == '\n')
                 foundSeq = true;
             else
                 i++;
         }
 
         // split head and body
-        byte[] headRaw = Arrays.copyOf(msg, i-1);
-        byte[] bodyRaw = Arrays.copyOfRange(msg, i+4, msg.length);
+        byte[] headRaw = Arrays.copyOf(msg, i - 1);
+        byte[] bodyRaw = Arrays.copyOfRange(msg, i + 4, msg.length);
 
         // Split head in fields
         String[] headFields = new String(headRaw, StandardCharsets.US_ASCII).split(" ");
-        
+
         // get the message type
         String msgType = headFields[0];
-        
+
         /** all possible fields */
         String version = headFields[1];
         Integer senderId = Integer.parseInt(headFields[2]);
@@ -228,24 +233,31 @@ public abstract class Message {
         Integer chunkNo = null;
         Integer replicationDegree = null;
 
-        if(msgType.equals(MessageType.PUTCHUNK.toString())) {
+        if (msgType.equals(MessageType.PUTCHUNK.toString())) {
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             replicationDegree = Integer.parseInt(headFields[5]);
             return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, bodyRaw);
-        } else if(msgType.equals(MessageType.STORED.toString())) {
+        } else if (msgType.equals(MessageType.STORED.toString())) {
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             return new StoredMessage(version, senderId, fileId, chunkNo);
+        } else if (msgType.equals(MessageType.GETCHUNK.toString())) {
+            fileId = Message.hexStringToByteArray(headFields[3]);
+            chunkNo = Integer.parseInt(headFields[4]);
+            return new GetChunkMessage(version, senderId, fileId, chunkNo);
+        } else if (msgType.equals(MessageType.CHUNK.toString())) {
+            fileId = Message.hexStringToByteArray(headFields[3]);
+            chunkNo = Integer.parseInt(headFields[4]);
+            return new ChunkMessage(version, senderId, fileId, chunkNo, bodyRaw);
         } else {
             throw new Exception(String.format("Unexpected message type %s", headFields[0]));
         }
 
-        
     }
 
-//#region Getters and Setters
-    
+    // #region Getters and Setters
+
     /**
      * @return the messageType
      */
@@ -310,31 +322,27 @@ public abstract class Message {
         DatagramPacket dp = new DatagramPacket(msg, msg.length);
         return dp;
     }
-//#endregion
+    // #endregion
 
     @Override
     public String toString() {
-        String s = String.format(
-            "Message\n\tType: %s\n\tVersion: %s\n\tSender: %s",
-            this.messageType.toString(),
-            this.version,
-            this.senderId);
-        
+        String s = String.format("Message\n\tType: %s\n\tVersion: %s\n\tSender: %s", this.messageType.toString(),
+                this.version, this.senderId);
+
         // append optional fields
-        if(fileId != null)
+        if (fileId != null)
             s += String.format("\n\tFileId: %s", Hash.getHexHash(this.fileId));
 
-        if(this.chunkNo != null)
+        if (this.chunkNo != null)
             s += String.format("\n\tChunkNo: %d", this.chunkNo);
-        
-        if(this.replicationDegree != null)
+
+        if (this.replicationDegree != null)
             s += String.format("\n\tReplicationDegree: %d", this.replicationDegree);
-        
-        if(this.data != null) {
+
+        if (this.data != null) {
             String data = Hash.getHexHash(this.data);
-            s += String.format("\n\tData: %s...\n\tData Size: %s", 
-                data.substring(0, Math.min(15, data.length())),
-                this.data.length);
+            s += String.format("\n\tData: %s...\n\tData Size: %s", data.substring(0, Math.min(15, data.length())),
+                    this.data.length);
         }
 
         return s;
