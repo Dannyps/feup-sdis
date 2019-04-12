@@ -43,7 +43,8 @@ public class Peer implements RMIRemote {
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
 
 	// the lastest chunk headers received (from recovery)
-	private ArrayList<ReceivedChunkInfo> receivedChunkInfo;
+	// key concat(fileIdHexStr + chunkno)
+	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> receivedChunkInfo;
 
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
@@ -170,7 +171,7 @@ public class Peer implements RMIRemote {
 
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 
-		this.receivedChunkInfo = new ArrayList<ReceivedChunkInfo>();
+		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 
 		// instatiate thread pool
 		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
@@ -182,7 +183,7 @@ public class Peer implements RMIRemote {
 	/**
 	 * @return the receivedChunkInfo
 	 */
-	public ArrayList<ReceivedChunkInfo> getReceivedChunkInfo() {
+	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> getReceivedChunkInfo() {
 		return receivedChunkInfo;
 	}
 

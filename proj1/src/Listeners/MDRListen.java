@@ -27,7 +27,7 @@ public class MDRListen extends ChannelListener{
         // ignore self messages
         if(msg.getSenderId() != this.serverId) {
             PrintMessage.p("Received", msg);
-            ChunkReceiverWorker w = new ChunkReceiverWorker((ChunkMessage) msg);
+            ChunkReceiverWorker w = new ChunkReceiverWorker((ChunkMessage) msg, System.currentTimeMillis());
             executor.submit(w);
         }
     }
