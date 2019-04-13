@@ -58,5 +58,9 @@ public class FileInfo implements Serializable {
 
 	public byte[] getFileId() {
 		return fileIdHex;
+    }
+    
+    public String getFileIdHex() {
+		return Hash.getHexHash(this.fileIdHex);
 	}
 }

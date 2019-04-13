@@ -1,21 +1,24 @@
 package Listeners;
 
 import java.net.MulticastSocket;
+
+import Messages.ChunkMessage;
 import Messages.Message;
 import Messages.PutChunkMessage;
 import Utils.PrintMessage;
+import Workers.ChunkReceiverWorker;
 import Workers.PutChunkWorker;
 
 /**
  * MDBListen
  */
-public class MDBListen extends ChannelListener{
+public class MDRListen extends ChannelListener{
     
     /**
      * 
      * @param s Multicast channel for backup messages
      */
-    public MDBListen(MulticastSocket s) {
+    public MDRListen(MulticastSocket s) {
         super(s);
     }
 
@@ -24,7 +27,7 @@ public class MDBListen extends ChannelListener{
         // ignore self messages
         if(msg.getSenderId() != this.serverId) {
             PrintMessage.p("Received", msg);
-            PutChunkWorker w = new PutChunkWorker((PutChunkMessage) msg);
+            ChunkReceiverWorker w = new ChunkReceiverWorker((ChunkMessage) msg, System.currentTimeMillis());
             executor.submit(w);
         }
     }

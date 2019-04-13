@@ -36,7 +36,8 @@ public class ServiceFileSystem {
      * @param chunkNo The chunk number
      * @return The relative path to the restored chunk of the file fileId
      */
+    @Deprecated // restoring chunks is not advised
     public static String getRestoredChunkPath(String fileId, Integer chunkNo) {
-        return String.format("peer%d/restore/%s/chk%d", Peer.getInstance().getPeerId(), fileId, chunkNo);
+        return String.format("peer%d/restore/%s_chunks/chk%d", Peer.getInstance().getPeerId(), fileId, chunkNo);
     }
 }

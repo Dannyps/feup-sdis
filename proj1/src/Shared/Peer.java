@@ -11,17 +11,21 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import Listeners.MCListen;
 import Listeners.MDBListen;
+import Listeners.MDRListen;
 import Messages.GetChunkMessage;
 import Messages.Message;
 import Messages.MessageType;
 import Utils.*;
 import Workers.BackupWorker;
+import Workers.ChunkReceiverWatcher;
+import Workers.RestoreWorker;
 
 public class Peer implements RMIRemote {
 	private String serviceAP;
@@ -34,10 +38,16 @@ public class Peer implements RMIRemote {
 	private MulticastSocket mcSocket;
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
-	public ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
+	private ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
 	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who
 	// stored the chunk
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
+
+	// the lastest chunk headers received (from recovery)
+	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> receivedChunkInfo;
+
+	// the lastest chunk bodies received (from recovery)
+	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> receivedChunkData;
 
 	// static variable single_instance of type Singleton
 	private static Peer single_instance = null;
@@ -164,11 +174,28 @@ public class Peer implements RMIRemote {
 
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 
+		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
+		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
+
 		// instatiate thread pool
-		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 		System.out.println("[INFO] Bound to all three sockets successfully.");
 		PrintMessage.printMessages = true;
+	}
+
+	/**
+	 * @return the receivedChunkInfo
+	 */
+	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> getReceivedChunkInfo() {
+		return receivedChunkInfo;
+	}
+
+	/**
+	 * @return the receivedChunkData
+	 */
+	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> getReceivedChunkData() {
+		return receivedChunkData;
 	}
 
 	MulticastSocket bindToMultiCast(AddrPort ap) {
@@ -190,7 +217,7 @@ public class Peer implements RMIRemote {
 	public int backup(String filename, int replicationDegree) {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
-		
+
 		try {
 			this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(), f.getReplicationDegree()));
 		} catch (IOException e1) {
@@ -217,9 +244,25 @@ public class Peer implements RMIRemote {
 		try {
 			FileInfo fi = this.myBackedUpFiles.get(filename);
 			byte[] fileId = fi.getFileId();
+
+			ArrayList<Chunk> chunkList = new ArrayList<Chunk>();
+
+			/**
+			 * Keep track of all threads launched in order to restore the chunks. When all
+			 * of them have ended successfully, we can reconstitute the file.
+			 */
+			// TODO no longer needed
+			ArrayList<Future<Integer>> taskList = new ArrayList<Future<Integer>>();
+
 			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
-				GetChunkMessage msg = new GetChunkMessage(this.protoVer.toString(), this.serverId, fileId, cno);
+				GetChunkMessage msg = new GetChunkMessage(this.protoVer.getV(), this.serverId, fileId, cno);
+				PrintMessage.p("Created GETCHUNK", msg.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
+				this.executor.submit(new RestoreWorker(msg, cno, chunkList));
 			}
+
+			ChunkReceiverWatcher watcher = new ChunkReceiverWatcher(fi);
+			Thread t = new Thread(watcher);
+			t.start();
 		} catch (Exception e) {
 			return -1;
 		}
@@ -269,6 +312,12 @@ public class Peer implements RMIRemote {
 				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
 				Thread mdbThread = new Thread(mdbRunnable);
 				mdbThread.start();
+
+				// launch backup multicast channel listener
+				MDRListen mdrRunnable = new MDRListen(obj.mdrSocket);
+				Thread mdrThread = new Thread(mdrRunnable);
+				mdrThread.start();
+
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();
