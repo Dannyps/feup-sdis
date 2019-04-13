@@ -1,7 +1,6 @@
 package Messages;
 
 public class DeleteMessage extends Message {
-    byte[] fileId;
 
     /**
      * 

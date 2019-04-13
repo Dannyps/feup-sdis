@@ -25,6 +25,8 @@ import Messages.MessageType;
 import Utils.*;
 import Workers.BackupWorker;
 import Workers.ChunkReceiverWatcher;
+import Workers.DeleteSenderWorker;
+import Workers.DeleteWorker;
 import Workers.RestoreWorker;
 
 public class Peer implements RMIRemote {
@@ -39,8 +41,10 @@ public class Peer implements RMIRemote {
 	private MulticastSocket mdbSocket;
 	private MulticastSocket mdrSocket;
 	private ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
+	private ConcurrentHashMap<String, FileInfo> BackedUpFiles;
 	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who
 	// stored the chunk
+	// TODO is this still needed?
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
 
 	// the lastest chunk headers received (from recovery)
@@ -271,7 +275,17 @@ public class Peer implements RMIRemote {
 	}
 
 	public int delete(String filename) {
-		return 0;
+		if (this.myBackedUpFiles.containsKey(filename)) {
+
+			// this file was backed up
+			this.executor.submit(new DeleteSenderWorker(this.myBackedUpFiles.get(filename)));
+			return 0;
+		} else {
+			PrintMessage.p("DELETE FILE",
+					String.format("Requested file to be deleted, %s, was never backed up", filename),
+					ConsoleColours.RED_BOLD, ConsoleColours.RED);
+			return -1;
+		}
 	}
 
 	public int reclaim(int a) {
