@@ -1,5 +1,6 @@
 package Workers;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -43,8 +44,11 @@ public class DeleteWorker implements Runnable {
     public void run() {
         String fileIdHex = Hash.getHexHash(this.fileId);
         try {
-            Path p = Paths.get(ServiceFileSystem.getBackupFilePath(fileIdHex));
-            this.deleteDirectory(p);
+            if (new File(ServiceFileSystem.getBackupFilePath(fileIdHex)).exists()) {
+                Path p = Paths.get(ServiceFileSystem.getBackupFilePath(fileIdHex));
+                this.deleteDirectory(p);
+                PrintMessage.p("DELETE FILE", "Deleted all chunks for file " + fileIdHex);
+            }
         } catch (InvalidPathException e) {
             // the Paths.get failed
             e.printStackTrace();
@@ -54,6 +58,6 @@ public class DeleteWorker implements Runnable {
             e.printStackTrace();
             return;
         }
-        PrintMessage.p("DELETE FILE", "Deleted all chunks for file " + fileIdHex);
+
     }
 }
