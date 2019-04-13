@@ -3,7 +3,8 @@ package Utils;
 import Shared.Peer;
 
 /**
- * Collection of static methods that tell the specific location for storing files and chunks data
+ * Collection of static methods that tell the specific location for storing
+ * files chunks data and other relevant persistent data
  */
 public class ServiceFileSystem {
     /**
@@ -15,7 +16,7 @@ public class ServiceFileSystem {
     }
 
     /**
-     * @param fileId The file id hash string in hexadecimal representation
+     * @param fileId  The file id hash string in hexadecimal representation
      * @param chunkNo The chunk number
      * @return The relative path to the backup chunk of the file fileId
      */
@@ -32,12 +33,34 @@ public class ServiceFileSystem {
     }
 
     /**
-     * @param fileId The file id hash string in hexadecimal representation
-     * @param chunkNo The chunk number
-     * @return The relative path to the restored chunk of the file fileId
+     * 
+     * @return
      */
-    @Deprecated // restoring chunks is not advised
-    public static String getRestoredChunkPath(String fileId, Integer chunkNo) {
-        return String.format("peer%d/restore/%s_chunks/chk%d", Peer.getInstance().getPeerId(), fileId, chunkNo);
+    public static String getLocalChunksPersistentDataPath() {
+        return String.format("peer%d/local_chunks.obj", Peer.getInstance().getPeerId());
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public static String getLocalChunksPersistentDataPath(Integer peerId) {
+        return String.format("peer%d/local_chunks.obj", peerId);
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public static String getBackedUpFilesPersistentDataPath() {
+        return String.format("peer%d/my_backedup_files.obj", Peer.getInstance().getPeerId());
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public static String getBackedUpFilesPersistentDataPath(Integer peerId) {
+        return String.format("peer%d/my_backedup_files.obj", peerId);
     }
 }

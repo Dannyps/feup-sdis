@@ -23,6 +23,7 @@ import Utils.*;
 import Workers.BackupWorker;
 import Workers.ChunkReceiverWatcher;
 import Workers.DeleteSenderWorker;
+import Workers.FileSystemWorker;
 import Workers.RestoreWorker;
 
 public class Peer implements RMIRemote {
@@ -133,7 +134,7 @@ public class Peer implements RMIRemote {
 		this.mdrSocket = bindToMultiCast(MDR);
 
 		// initialize auxiliar data structures
-		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>(); // TODO load from disk
+		this.myBackedUpFiles = FileSystemWorker.loadMyBackedUpFiles(serverId);
 		this.backedUpChunks = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>(); // TODO load from
 																										// disk
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
@@ -274,6 +275,11 @@ public class Peer implements RMIRemote {
 				Thread mdrThread = new Thread(mdrRunnable);
 				mdrThread.start();
 
+				// launch thread responsible to update persistent data periodically
+				FileSystemWorker fsWorker = new FileSystemWorker();
+				Thread fsThread = new Thread(fsWorker);
+				fsThread.start();
+
 			} catch (Exception e) {
 				System.err.println("Server exception: " + e.toString());
 				e.printStackTrace();
@@ -295,10 +301,6 @@ public class Peer implements RMIRemote {
 					.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
 			System.exit(-1);
 		}
-	}
-
-	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
-		return myBackedUpFiles;
 	}
 
 	// #region Getters & Setters
@@ -380,6 +382,14 @@ public class Peer implements RMIRemote {
 			return null;
 		// get list of peers who stored the specified chunk
 		return chunks.get(ChunkNo);
+	}
+
+	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
+		return this.myBackedUpFiles;
+	}
+
+	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> getBackedUpChunks() {
+		return this.backedUpChunks;
 	}
 
 	/**
