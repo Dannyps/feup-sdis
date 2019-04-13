@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class RegularFile {
-    private static int CHUNK_MAX_SIZE = 64000;
+    static int CHUNK_MAX_SIZE = 64000;
     /** maximum file size chunk */
     private byte[] fileID = null;
     /** file identifier sha-256 hash */
@@ -51,6 +51,13 @@ public class RegularFile {
      */
     public byte[] getFileID() {
         return fileID;
+    }
+
+    /**
+     * @return the cHUNK_MAX_SIZE
+     */
+    public static int getCHUNK_MAX_SIZE() {
+        return CHUNK_MAX_SIZE;
     }
 
     /**

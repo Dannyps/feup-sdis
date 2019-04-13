@@ -25,8 +25,8 @@ public class RestoreWorker implements Runnable {
     private GetChunkMessage msg;
 
     /**
-     * @param msg       the pre-built message to send
-     * @param chunkNo   the number of the chunk to recover
+     * @param msg     the pre-built message to send
+     * @param chunkNo the number of the chunk to recover
      */
     public RestoreWorker(GetChunkMessage msg, int chunkNo) {
         this.peer = Peer.getInstance(); // get a reference to the singleton peer
@@ -46,6 +46,7 @@ public class RestoreWorker implements Runnable {
         this.protocolVersion = this.peer.getProtocolVersion();
         this.serverId = this.peer.getPeerId();
         this.msg = msg;
+        this.chunkno = chunkNo;
     }
 
     @Override
@@ -54,12 +55,13 @@ public class RestoreWorker implements Runnable {
         byte[] rawMsg = msg.getMessage();
         // create the datagram
         DatagramPacket dp = new DatagramPacket(rawMsg, rawMsg.length, this.peer.getAddrMC().getInetSocketAddress());
-        //FileInfo fi = this.peer.getMyBackedUpFiles().get(filename);
+        // FileInfo fi = this.peer.getMyBackedUpFiles().get(filename);
         // send the PUTCHUNK message
         try {
             this.peer.getMcSocket().send(dp);
-            System.out.println(ConsoleColours.CYAN + String.format("Sent getChunk (fileId,chunk) (%s, %d).",
-                    this.chunk.getFileIdHexStr(), this.chunk.getChunkNo()) + ConsoleColours.RESET);
+            System.out.println(ConsoleColours.CYAN
+                    + String.format("Sent getChunk (fileId,chunk) (%s, %d).", this.msg.getFileIdHexStr(), this.chunkno)
+                    + ConsoleColours.RESET);
             PrintMessage.p("Sent", msg);
         } catch (IOException e) {
             e.printStackTrace();

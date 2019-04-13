@@ -24,11 +24,13 @@ public class ChunkReceiverWorker implements Runnable {
     Peer peer;
     Long messageArrivedAt;
     ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> receivedChunkInfo;
+    ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> receivedChunkData;
 
     public ChunkReceiverWorker(ChunkMessage msg, Long messageArrivedAt) {
         this.msg = msg;
         this.peer = Peer.getInstance();
         this.receivedChunkInfo = this.peer.getReceivedChunkInfo();
+        this.receivedChunkData = this.peer.getReceivedChunkData();
         this.messageArrivedAt = messageArrivedAt;
     }
 
@@ -40,24 +42,39 @@ public class ChunkReceiverWorker implements Runnable {
 
         PrintMessage.p("CHUNK", "received the following: " + msg.getFileIdHexStr() + "\tChunkNo:" + msg.getChunkNo(),
                 ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
-        ConcurrentHashMap<Integer, Long> thisFilesChunks = this.receivedChunkInfo.get(msg.getFileIdHexStr());
 
-        if (thisFilesChunks == null) {
+        // store chunk body:
+        ConcurrentHashMap<Integer, byte[]> fileChunkData = this.receivedChunkData.get(msg.getFileIdHexStr());
+
+        if (fileChunkData == null) {
             // file not yet in the hashmap. Add it.
-            addFileAndChunk2HashMap();
+            System.out.println("registering file and chunk");
+            registerFileAndChunkData();
 
         } else {
-            addChunk2HashMap(thisFilesChunks);
+            System.out.println("registering chunk only");
+            registerChunkData(fileChunkData);
         }
-        // "Store file"
+        System.out.println("Wrote data for " + msg.getChunkNo());
+        // store chunk header:
+        ConcurrentHashMap<Integer, Long> fileChunkHeaders = this.receivedChunkInfo.get(msg.getFileIdHexStr());
+
+        if (fileChunkHeaders == null) {
+            // file not yet in the hashmap. Add it.
+            registerFileAndChunkHeader();
+
+        } else {
+            registerChunkHeader(fileChunkHeaders);
+        }
+
     }
 
-    private void addChunk2HashMap(ConcurrentHashMap<Integer, Long> thisFilesChunks) {
-        thisFilesChunks.put(msg.getChunkNo(), this.messageArrivedAt);
+    private void registerChunkHeader(ConcurrentHashMap<Integer, Long> fileChunkHeaders) {
+        fileChunkHeaders.put(msg.getChunkNo(), this.messageArrivedAt);
         this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
     }
 
-    private void addFileAndChunk2HashMap() {
+    private void registerFileAndChunkHeader() {
         // iner hashmap
         ConcurrentHashMap<Integer, Long> inner = new ConcurrentHashMap<>();
         inner.put(msg.getChunkNo(), this.messageArrivedAt);
@@ -66,10 +83,25 @@ public class ChunkReceiverWorker implements Runnable {
         this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
     }
 
+    private void registerChunkData(ConcurrentHashMap<Integer, byte[]> fileChunkData) {
+        fileChunkData.put(msg.getChunkNo(), msg.getRawData());
+        this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
+    }
+
+    private void registerFileAndChunkData() {
+        // iner hashmap
+        ConcurrentHashMap<Integer, byte[]> inner = new ConcurrentHashMap<>();
+        inner.put(msg.getChunkNo(), msg.getRawData());
+        // outer hashmap
+        this.receivedChunkData.put(msg.getFileIdHexStr(), inner);
+        this.scheduleRemoval(msg.getFileIdHexStr(), msg.getChunkNo());
+    }
+
     private void scheduleRemoval(String fileIdHexStr, Integer chunkNo) {
-        /** TODO the entry added to this.receivedChunkInfo should be removed after, let's
-          * say, 5 seconds, so that the file can be recovered again (otherwise, it will
-          * just be found as sent by another peer, which may not even have anymore)
-          */
+        /**
+         * TODO the entry added to this.receivedChunkInfo should be removed after, let's
+         * say, 5 seconds, so that the file can be recovered again (otherwise, it will
+         * just be found as sent by another peer, which may not even have anymore)
+         */
     }
 }
