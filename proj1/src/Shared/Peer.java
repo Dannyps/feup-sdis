@@ -51,6 +51,8 @@ public class Peer implements RMIRemote {
 	 * @see Utils.FileInfo
 	 */
 	private ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
+
+	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> backedUpChunks;
 	/**
 	 * Keeps track of the lastest chunk headers received through MDR channel. It
 	 * maps file identifiers in hexadecimal format to a new table. The later maps
@@ -131,11 +133,12 @@ public class Peer implements RMIRemote {
 		this.mdrSocket = bindToMultiCast(MDR);
 
 		// initialize auxiliar data structures
-		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>();
+		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>(); // TODO load from disk
+		this.backedUpChunks = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>(); // TODO load from
+																										// disk
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
-
 		// instatiate thread pool
 		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
@@ -391,6 +394,57 @@ public class Peer implements RMIRemote {
 	 */
 	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> getReceivedChunkData() {
 		return receivedChunkData;
+	}
+
+	/**
+	 * Check if the pair (fileId, chunkNo) already exists locally on this peer
+	 * 
+	 * @param fileId
+	 * @param chunkNo
+	 * @return True if the chunk exists locally, false otherwise
+	 */
+	public Boolean isChunkLocal(String fileId, Integer chunkNo) {
+		if (this.backedUpChunks.containsKey(fileId))
+			if (this.backedUpChunks.get(fileId).contains(chunkNo))
+				return true;
+		return false;
+	}
+
+	/**
+	 * Registers that a new chunk was created locally upon backup request of other
+	 * Peers
+	 * 
+	 * @param fileId  The file for which some chunk was backed up
+	 * @param chunkNo The chunk identifier that was backed up
+	 * @param info    Information about the chunk (replication degree)
+	 */
+	public void registerLocalChunk(String fileId, Integer chunkNo, ChunkInfo info) {
+		ConcurrentHashMap<Integer, ChunkInfo> fileChunks = this.backedUpChunks.get(fileId);
+		if (fileChunks == null) {
+			fileChunks = new ConcurrentHashMap<Integer, ChunkInfo>();
+			this.backedUpChunks.put(fileId, fileChunks);
+		}
+
+		if (!fileChunks.containsKey(chunkNo)) {
+			fileChunks.put(chunkNo, info);
+		}
+	}
+
+	/**
+	 * 
+	 * @param fileId
+	 * @param chunkNo
+	 */
+	public void updateLocalChunk(String fileId, Integer chunkNo) {
+		ConcurrentHashMap<Integer, ChunkInfo> fileChunks = this.backedUpChunks.get(fileId);
+		if (fileChunks != null) {
+			if (fileChunks.containsKey(chunkNo)) {
+				// chunk exists locally
+				fileChunks.get(chunkNo).increaseBackupDegree();
+				System.out.println(String.format("File: %s\tChunk: %d -> Backup degree %d", fileId, chunkNo,
+						fileChunks.get(chunkNo).getBackupDegree()));
+			}
+		}
 	}
 	// #endregion
 }

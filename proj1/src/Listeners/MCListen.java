@@ -27,8 +27,8 @@ public class MCListen extends ChannelListener {
     @Override
     protected void newMessageHandler(Message msg) {
         PrintMessage.p("Received", msg);
-        if (msg.getMessageType() == MessageType.STORED) {
-            Peer.getInstance().chunkStored(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
+        if (msg.getMessageType() == MessageType.STORED && msg.getSenderId() != this.serverId) {
+            Peer.getInstance().updateLocalChunk(msg.getFileIdHexStr(), msg.getChunkNo());
         } else if (msg.getMessageType() == MessageType.GETCHUNK && msg.getSenderId() != this.serverId) {
             // launch thread to reply requested chunk
             ChunkSenderWorker w = new ChunkSenderWorker((GetChunkMessage) msg);

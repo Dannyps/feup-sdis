@@ -9,8 +9,8 @@ import Workers.PutChunkWorker;
 /**
  * MDBListen
  */
-public class MDBListen extends ChannelListener{
-    
+public class MDBListen extends ChannelListener {
+
     /**
      * 
      * @param s Multicast channel for backup messages
@@ -22,7 +22,7 @@ public class MDBListen extends ChannelListener{
     @Override
     protected void newMessageHandler(Message msg) {
         // ignore self messages
-        if(msg.getSenderId() != this.serverId) {
+        if (msg.getSenderId() != this.serverId) {
             PrintMessage.p("Received", msg);
             PutChunkWorker w = new PutChunkWorker((PutChunkMessage) msg);
             executor.submit(w);

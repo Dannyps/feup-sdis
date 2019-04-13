@@ -12,7 +12,7 @@ public class ChunkInfo implements Serializable {
     private Integer replicationDegree;
     // the current replication degree
     private Integer backupDegree;
-    
+
     /**
      * 
      */
@@ -29,6 +29,16 @@ public class ChunkInfo implements Serializable {
     public ChunkInfo(Integer replicationDegree, Integer backupDegree) {
         this.replicationDegree = replicationDegree;
         this.backupDegree = backupDegree;
+    }
+
+    /**
+     * 
+     * @param replicationDegree
+     * @param backupDegree
+     */
+    public ChunkInfo(Integer replicationDegree) {
+        this.replicationDegree = replicationDegree;
+        this.backupDegree = 1;
     }
 
     /**
