@@ -35,20 +35,6 @@ public class RestoreWorker implements Runnable {
         this.msg = msg;
     }
 
-    /**
-     * @param msg       the pre-built message to send
-     * @param chunkNo   the number of the chunk to recover
-     * @param chunkList the ArrayList of chunks where to deposit the received chunk.
-     */
-    @Deprecated
-    public RestoreWorker(GetChunkMessage msg, int chunkNo, ArrayList<Chunk> chunkList) {
-        this.peer = Peer.getInstance(); // get a reference to the singleton peer
-        this.protocolVersion = this.peer.getProtocolVersion();
-        this.serverId = this.peer.getPeerId();
-        this.msg = msg;
-        this.chunkno = chunkNo;
-    }
-
     @Override
     public void run() {
         // Get the raw message

@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -20,45 +19,290 @@ import Listeners.MCListen;
 import Listeners.MDBListen;
 import Listeners.MDRListen;
 import Messages.GetChunkMessage;
-import Messages.Message;
-import Messages.MessageType;
 import Utils.*;
 import Workers.BackupWorker;
 import Workers.ChunkReceiverWatcher;
 import Workers.DeleteSenderWorker;
-import Workers.DeleteWorker;
 import Workers.RestoreWorker;
 
 public class Peer implements RMIRemote {
-	private String serviceAP;
-	private Registry registry;
+	/** The address and port for Control Multicast Channel */
 	private AddrPort MC;
+	/** The address and port for Data Backup Multicast Channel */
 	private AddrPort MDB;
+	/** The address and port for Data Recovery Multicast Channel */
 	private AddrPort MDR;
-	private ProtocolVersion protoVer;
-	private Integer serverId;
+	/** The socket for Control channel */
 	private MulticastSocket mcSocket;
+	/** The socket for Data Backup channel */
 	private MulticastSocket mdbSocket;
+	/** The socket for Data Recovery channel */
 	private MulticastSocket mdrSocket;
+	/** The protocol version to be used. Without enhancements, should be 1.0 */
+	private ProtocolVersion protoVer;
+	/** Numeric identifier for the peer. unique among all peers on the LAN */
+	private Integer serverId;
+	/**
+	 * Tracks local backed up files, i.e, the files that this peer has requested to
+	 * other peers to back up. It maps each filename, the key, to an instance
+	 * {@link Utils.FileInfo}, which contains the desired replication degree, the
+	 * actual replication degree, and more
+	 * 
+	 * @see Utils.FileInfo
+	 */
 	private ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
-	private ConcurrentHashMap<String, FileInfo> BackedUpFiles;
-	// Maps fileIds to new map which maps chunk numbers to a set of peer ids who
-	// stored the chunk
-	// TODO is this still needed?
-	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
-
-	// the lastest chunk headers received (from recovery)
+	/**
+	 * Keeps track of the lastest chunk headers received through MDR channel. It
+	 * maps file identifiers in hexadecimal format to a new table. The later maps
+	 * chunk numbers to a timestamp (a system time instance of when did the CHUNK
+	 * message arrived on this peer). This data structure is only used for the
+	 * Restore protocol. The main purpose of this data structure is to avoid the
+	 * Initiator Peer being flooded of Chunk messages for the same chunk. Therefore,
+	 * before any peer sends the chunk, it consults this table to know if other
+	 * Peers sent the chunk already
+	 */
 	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> receivedChunkInfo;
-
-	// the lastest chunk bodies received (from recovery)
+	/**
+	 * Similar to {@link receivedChunkInfo}, but instead of recording timestamps, it
+	 * registers the actual chunk raw data. This data structure is populated as
+	 * CHUNK messages arrive, but only when the Initiator Peer is restoring a file.
+	 * When this table has all chunks of data for the file being restored, some
+	 * worker will construct the file on the local filesystem
+	 */
 	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> receivedChunkData;
-
-	// static variable single_instance of type Singleton
+	/**
+	 * Maps fileIds to new map which maps chunk numbers to a set of peer ids who
+	 * stored the chunk TODO is this still needed?
+	 * 
+	 * @deprecated
+	 */
+	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
+	/** Reference to the singleton peer */
 	private static Peer single_instance = null;
-
+	/** Manager for the runnables of this Peer (ThreadPool) */
 	ExecutorService executor;
 
-	// static method to create instance of Singleton class
+	/**
+	 * // TODO might not be needed anymore
+	 * 
+	 * @param fileId
+	 * @param chunkNo
+	 * @param peerId
+	 */
+	public void chunkStored(String fileId, Integer chunkNo, Integer peerId) {
+		// check if there's some reference to the said file
+		HashMap<Integer, TreeSet<Integer>> fileChunks = this.storedChunks.get(fileId);
+		if (fileChunks == null) {
+			fileChunks = new HashMap<Integer, TreeSet<Integer>>();
+			this.storedChunks.put(fileId, fileChunks);
+		}
+
+		// check if there's a reference to the said chunk
+		TreeSet<Integer> peers = fileChunks.get(chunkNo);
+		if (peers == null) {
+			peers = new TreeSet<Integer>();
+			fileChunks.put(chunkNo, peers);
+		}
+
+		// store the peer id in the set of peers who stored this tuple (fileid, chunkno)
+		peers.add(peerId);
+	}
+
+	/**
+	 * Construct the singleton Peer
+	 * 
+	 * @param mC       The address:port for Control multicast channel
+	 * @param mDB      The address:port for Data Backup multicast channel
+	 * @param mDR      The address:port for Data Recovery multicast channel
+	 * @param pv       The protocol version to be used
+	 * @param serverId This peer unique identifier for the LAN
+	 */
+	private Peer(AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId) {
+		// initialize fields
+		this.MC = mC;
+		this.MDB = mDB;
+		this.MDR = mDR;
+		this.protoVer = pv;
+		this.serverId = serverId;
+
+		// Joins the multicast channels for control and data backup/recovery
+		this.mcSocket = bindToMultiCast(MC);
+		this.mdbSocket = bindToMultiCast(MDB);
+		this.mdrSocket = bindToMultiCast(MDR);
+
+		// initialize auxiliar data structures
+		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>();
+		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
+		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
+		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
+
+		// instatiate thread pool
+		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+
+		System.out.println("[INFO] Bound to all three sockets successfully.");
+		PrintMessage.printMessages = true;
+	}
+
+	/**
+	 * Joins the multicast group in the specified address:port
+	 * 
+	 * @param ap The address:port of the channel that this peer must join
+	 * @return The multicast socket to get and send messages from/to the joined
+	 *         multicast group
+	 */
+	MulticastSocket bindToMultiCast(AddrPort ap) {
+		MulticastSocket s = null;
+		try {
+			s = new MulticastSocket(ap.getPort());
+			s.joinGroup(ap.getInetAddress());
+		} catch (SocketException e) {
+			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
+			System.exit(6);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(6);
+		}
+		return s;
+	}
+
+	public int backup(String filename, int replicationDegree) {
+		RegularFile f = new RegularFile(filename, replicationDegree);
+		ArrayList<Chunk> lst;
+
+		try {
+			this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(), f.getReplicationDegree()));
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		try {
+			lst = f.getChunks();
+			int i = 0;
+			for (Chunk c : lst) {
+				PrintMessage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
+				this.executor.submit(new BackupWorker(filename, c, i++));
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to open " + e.getMessage());
+			e.printStackTrace();
+		}
+
+		return 0;
+	}
+
+	public int restore(String filename) {
+		try {
+			FileInfo fi = this.myBackedUpFiles.get(filename);
+			byte[] fileId = fi.getFileId();
+
+			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
+				GetChunkMessage msg = new GetChunkMessage(this.protoVer.getV(), this.serverId, fileId, cno);
+				PrintMessage.p("Created GETCHUNK", msg.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
+				this.executor.submit(new RestoreWorker(msg, cno));
+			}
+
+			ChunkReceiverWatcher watcher = new ChunkReceiverWatcher(fi);
+			Thread t = new Thread(watcher);
+			t.start();
+		} catch (Exception e) {
+			return -1;
+		}
+
+		return 0;
+	}
+
+	public int delete(String filename) {
+		if (this.myBackedUpFiles.containsKey(filename)) {
+
+			// this file was backed up
+			this.executor.submit(new DeleteSenderWorker(this.myBackedUpFiles.get(filename)));
+			return 0;
+		} else {
+			PrintMessage.p("DELETE FILE",
+					String.format("Requested file to be deleted, %s, was never backed up", filename),
+					ConsoleColours.RED_BOLD, ConsoleColours.RED);
+			return -1;
+		}
+	}
+
+	public int reclaim(int a) {
+		return 0;
+	}
+
+	public String getState() {
+		return "my state";
+	}
+
+	public static void main(String args[]) {
+		parseArgs(args);
+		try {
+			AddrPort MC = new AddrPort(args[3]);
+			AddrPort MDB = new AddrPort(args[4]);
+			AddrPort MDR = new AddrPort(args[5]);
+			ProtocolVersion protocolVersion = new ProtocolVersion(args[0]);
+			Integer serverId = Integer.parseInt(args[1]);
+			String serviceAP = args[2];
+
+			try {
+				Registry registry = LocateRegistry.getRegistry();
+				Peer obj = new Peer(MC, MDB, MDR, protocolVersion, serverId);
+				single_instance = obj;
+				RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
+
+				// Bind the remote object's stub in the registry
+				registry.rebind(serviceAP, stub);
+
+				System.err.println("Peer ready on " + serviceAP);
+
+				// launch backup multicast channel listener
+				MCListen mcRunnable = new MCListen(obj.mcSocket);
+				Thread mcThread = new Thread(mcRunnable);
+				mcThread.start();
+
+				// launch backup multicast channel listener
+				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
+				Thread mdbThread = new Thread(mdbRunnable);
+				mdbThread.start();
+
+				// launch backup multicast channel listener
+				MDRListen mdrRunnable = new MDRListen(obj.mdrSocket);
+				Thread mdrThread = new Thread(mdrRunnable);
+				mdrThread.start();
+
+			} catch (Exception e) {
+				System.err.println("Server exception: " + e.toString());
+				e.printStackTrace();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-2);
+		}
+	}
+
+	/**
+	 * Loads arguments from the args list. Terminates execution on bad args.
+	 * 
+	 * @param args
+	 */
+	private static void parseArgs(String[] args) {
+		if (args.length != 6) {
+			System.err
+					.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
+			System.exit(-1);
+		}
+	}
+
+	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
+		return myBackedUpFiles;
+	}
+
+	// #region Getters & Setters
+	/**
+	 * 
+	 * @return
+	 */
 	public static Peer getInstance() {
 		return single_instance; /* an unninitialized peer should not be instantiated. */
 	}
@@ -136,59 +380,6 @@ public class Peer implements RMIRemote {
 	}
 
 	/**
-	 * 
-	 * @param fileId
-	 * @param chunkNo
-	 * @param peerId
-	 */
-	public void chunkStored(String fileId, Integer chunkNo, Integer peerId) {
-		// check if there's some reference to the said file
-		HashMap<Integer, TreeSet<Integer>> fileChunks = this.storedChunks.get(fileId);
-		if (fileChunks == null) {
-			fileChunks = new HashMap<Integer, TreeSet<Integer>>();
-			this.storedChunks.put(fileId, fileChunks);
-		}
-
-		// check if there's a reference to the said chunk
-		TreeSet<Integer> peers = fileChunks.get(chunkNo);
-		if (peers == null) {
-			peers = new TreeSet<Integer>();
-			fileChunks.put(chunkNo, peers);
-		}
-
-		// store the peer id in the set of peers who stored this tuple (fileid, chunkno)
-		peers.add(peerId);
-	}
-
-	private Peer(Registry registry, AddrPort mC, AddrPort mDB, AddrPort mDR, ProtocolVersion pv, Integer serverId,
-			String serviceAP) {
-		this.registry = registry;
-		this.MC = mC;
-		this.MDB = mDB;
-		this.MDR = mDR;
-		this.protoVer = pv;
-		this.serverId = serverId;
-		this.serviceAP = serviceAP;
-
-		this.mcSocket = bindToMultiCast(MC);
-		this.mdbSocket = bindToMultiCast(MDB);
-		this.mdrSocket = bindToMultiCast(MDR);
-
-		this.myBackedUpFiles = new ConcurrentHashMap<String, FileInfo>();
-
-		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
-
-		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
-		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
-
-		// instatiate thread pool
-		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-
-		System.out.println("[INFO] Bound to all three sockets successfully.");
-		PrintMessage.printMessages = true;
-	}
-
-	/**
 	 * @return the receivedChunkInfo
 	 */
 	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> getReceivedChunkInfo() {
@@ -201,161 +392,5 @@ public class Peer implements RMIRemote {
 	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> getReceivedChunkData() {
 		return receivedChunkData;
 	}
-
-	MulticastSocket bindToMultiCast(AddrPort ap) {
-		MulticastSocket s = null;
-		try {
-			s = new MulticastSocket(ap.getPort());
-			s.joinGroup(ap.getInetAddress());
-		} catch (SocketException e) {
-			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
-			System.exit(6);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			System.exit(6);
-		}
-		return s;
-	}
-
-	public int backup(String filename, int replicationDegree) {
-		RegularFile f = new RegularFile(filename, replicationDegree);
-		ArrayList<Chunk> lst;
-
-		try {
-			this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(), f.getReplicationDegree()));
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		try {
-			lst = f.getChunks();
-			int i = 0;
-			for (Chunk c : lst) {
-				PrintMessage.p("Created chunk", c.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-				this.executor.submit(new BackupWorker(filename, c, i++));
-			}
-		} catch (IOException e) {
-			System.err.println("Failed to open " + e.getMessage());
-			e.printStackTrace();
-		}
-
-		return 0;
-	}
-
-	public int restore(String filename) {
-		try {
-			FileInfo fi = this.myBackedUpFiles.get(filename);
-			byte[] fileId = fi.getFileId();
-
-			ArrayList<Chunk> chunkList = new ArrayList<Chunk>();
-
-			/**
-			 * Keep track of all threads launched in order to restore the chunks. When all
-			 * of them have ended successfully, we can reconstitute the file.
-			 */
-			// TODO no longer needed
-			ArrayList<Future<Integer>> taskList = new ArrayList<Future<Integer>>();
-
-			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
-				GetChunkMessage msg = new GetChunkMessage(this.protoVer.getV(), this.serverId, fileId, cno);
-				PrintMessage.p("Created GETCHUNK", msg.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-				this.executor.submit(new RestoreWorker(msg, cno, chunkList));
-			}
-
-			ChunkReceiverWatcher watcher = new ChunkReceiverWatcher(fi);
-			Thread t = new Thread(watcher);
-			t.start();
-		} catch (Exception e) {
-			return -1;
-		}
-
-		return 0;
-	}
-
-	public int delete(String filename) {
-		if (this.myBackedUpFiles.containsKey(filename)) {
-
-			// this file was backed up
-			this.executor.submit(new DeleteSenderWorker(this.myBackedUpFiles.get(filename)));
-			return 0;
-		} else {
-			PrintMessage.p("DELETE FILE",
-					String.format("Requested file to be deleted, %s, was never backed up", filename),
-					ConsoleColours.RED_BOLD, ConsoleColours.RED);
-			return -1;
-		}
-	}
-
-	public int reclaim(int a) {
-		return 0;
-	}
-
-	public String getState() {
-		return "my state";
-	}
-
-	public static void main(String args[]) {
-		parseArgs(args);
-		try {
-			AddrPort MC = new AddrPort(args[3]);
-			AddrPort MDB = new AddrPort(args[4]);
-			AddrPort MDR = new AddrPort(args[5]);
-			ProtocolVersion protocolVersion = new ProtocolVersion(args[0]);
-			Integer serverId = Integer.parseInt(args[1]);
-			String serviceAP = args[2];
-
-			try {
-				Registry registry = LocateRegistry.getRegistry();
-				Peer obj = new Peer(registry, MC, MDB, MDR, protocolVersion, serverId, serviceAP);
-				single_instance = obj;
-				RMIRemote stub = (RMIRemote) UnicastRemoteObject.exportObject(obj, 0);
-
-				// Bind the remote object's stub in the registry
-				registry.rebind(serviceAP, stub);
-
-				System.err.println("Peer ready on " + serviceAP);
-
-				// launch backup multicast channel listener
-				MCListen mcRunnable = new MCListen(obj.mcSocket);
-				Thread mcThread = new Thread(mcRunnable);
-				mcThread.start();
-
-				// launch backup multicast channel listener
-				MDBListen mdbRunnable = new MDBListen(obj.mdbSocket);
-				Thread mdbThread = new Thread(mdbRunnable);
-				mdbThread.start();
-
-				// launch backup multicast channel listener
-				MDRListen mdrRunnable = new MDRListen(obj.mdrSocket);
-				Thread mdrThread = new Thread(mdrRunnable);
-				mdrThread.start();
-
-			} catch (Exception e) {
-				System.err.println("Server exception: " + e.toString());
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-2);
-		}
-	}
-
-	/**
-	 * Loads arguments from the args list. Terminates execution on bad args.
-	 * 
-	 * @param args
-	 */
-	private static void parseArgs(String[] args) {
-		if (args.length != 6) {
-			System.err
-					.println(ConsoleColours.RED_BOLD_BRIGHT + "[ERROR] Expected 6 arguments, got " + args.length + "!");
-			System.exit(-1);
-		}
-	}
-
-	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
-		return myBackedUpFiles;
-	}
+	// #endregion
 }
