@@ -161,7 +161,7 @@ public abstract class Message {
         return buf.toByteArray();
     }
 
-    public static byte[] hexStringToByteArray(String s) {
+    protected static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
@@ -234,23 +234,32 @@ public abstract class Message {
         Integer replicationDegree = null;
 
         if (msgType.equals(MessageType.PUTCHUNK.toString())) {
+            // PUTCHUNK message
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             replicationDegree = Integer.parseInt(headFields[5]);
             return new PutChunkMessage(version, senderId, fileId, chunkNo, replicationDegree, bodyRaw);
         } else if (msgType.equals(MessageType.STORED.toString())) {
+            // STORED message
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             return new StoredMessage(version, senderId, fileId, chunkNo);
         } else if (msgType.equals(MessageType.GETCHUNK.toString())) {
+            // GETCHUNK message
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             return new GetChunkMessage(version, senderId, fileId, chunkNo);
         } else if (msgType.equals(MessageType.CHUNK.toString())) {
+            // CHUNK message
             fileId = Message.hexStringToByteArray(headFields[3]);
             chunkNo = Integer.parseInt(headFields[4]);
             return new ChunkMessage(version, senderId, fileId, chunkNo, bodyRaw);
+        } else if (msgType.equals(MessageType.DELETE.toString())) {
+            // DELETE message
+            fileId = Message.hexStringToByteArray(headFields[3]);
+            return new DeleteMessage(version, senderId, fileId);
         } else {
+            // unknown
             throw new Exception(String.format("Unexpected message type %s", headFields[0]));
         }
 
