@@ -135,8 +135,8 @@ public class Peer implements RMIRemote {
 
 		// initialize auxiliar data structures
 		this.myBackedUpFiles = FileSystemWorker.loadMyBackedUpFiles(serverId);
-		this.backedUpChunks = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>(); // TODO load from
-																										// disk
+		this.backedUpChunks = FileSystemWorker.loadLocalChunks(serverId);
+
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();

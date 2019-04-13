@@ -2,7 +2,6 @@ package Workers;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -53,6 +52,25 @@ public class FileSystemWorker implements Runnable {
         }
 
         return new ConcurrentHashMap<String, FileInfo>();
+    }
+
+    public static ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> loadLocalChunks(Integer peerId) {
+        Path p = Paths.get(ServiceFileSystem.getLocalChunksPersistentDataPath(peerId));
+        if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS))
+            return new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>();
+
+        // file exists, load it
+        ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> obj;
+        try {
+            FileInputStream fiStream = new FileInputStream(ServiceFileSystem.getLocalChunksPersistentDataPath(peerId));
+            ObjectInputStream oiStream = new ObjectInputStream(fiStream);
+            obj = (ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>) oiStream.readObject();
+            return obj;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>();
     }
 
     @Override
