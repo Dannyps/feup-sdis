@@ -446,5 +446,17 @@ public class Peer implements RMIRemote {
 			}
 		}
 	}
+
+	/**
+	 * Removes all information regarding a backed up file (to be called upon
+	 * receiving a DELETE message)
+	 * 
+	 * @param fileId
+	 */
+	public void deleteLocalFile(String fileId) {
+		if (this.backedUpChunks.contains(fileId))
+			this.backedUpChunks.remove(fileId);
+	}
+
 	// #endregion
 }

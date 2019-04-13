@@ -46,4 +46,11 @@ public class ChunkInfo implements Serializable {
         this.ownerPeers.add(peerId);
     }
 
+    /**
+     * Removes a peer from the owners of this chunk
+     */
+    public void removeOwnerPeer(Integer peerId) {
+        this.ownerPeers.remove(peerId);
+    }
+
 }

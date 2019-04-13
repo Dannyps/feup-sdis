@@ -9,6 +9,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import Shared.Peer;
 import Utils.Hash;
 import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
@@ -47,6 +48,7 @@ public class DeleteWorker implements Runnable {
             if (new File(ServiceFileSystem.getBackupFilePath(fileIdHex)).exists()) {
                 Path p = Paths.get(ServiceFileSystem.getBackupFilePath(fileIdHex));
                 this.deleteDirectory(p);
+                Peer.getInstance().deleteLocalFile(fileIdHex);
                 PrintMessage.p("DELETE FILE", "Deleted all chunks for file " + fileIdHex);
             }
         } catch (InvalidPathException e) {
