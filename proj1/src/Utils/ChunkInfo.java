@@ -1,35 +1,18 @@
 package Utils;
 
 import java.io.Serializable;
+import java.util.TreeSet;
 
 /**
  * Class to hold relevant chunk information
  */
 public class ChunkInfo implements Serializable {
-    // UID for serialization
+    /** UID for serialization */
     private static final long serialVersionUID = -6119751604672763260L;
-    // the desired replication degree
+    /** The desired replication degree as set by the Initiator Peer */
     private Integer replicationDegree;
-    // the current replication degree
-    private Integer backupDegree;
-
-    /**
-     * 
-     */
-    public ChunkInfo() {
-        this.replicationDegree = 0;
-        this.backupDegree = 0;
-    }
-
-    /**
-     * 
-     * @param replicationDegree
-     * @param backupDegree
-     */
-    public ChunkInfo(Integer replicationDegree, Integer backupDegree) {
-        this.replicationDegree = replicationDegree;
-        this.backupDegree = backupDegree;
-    }
+    /** List of peer identifiers who stored this chunk */
+    private TreeSet<Integer> ownerPeers;
 
     /**
      * 
@@ -38,41 +21,29 @@ public class ChunkInfo implements Serializable {
      */
     public ChunkInfo(Integer replicationDegree) {
         this.replicationDegree = replicationDegree;
-        this.backupDegree = 1;
+        this.ownerPeers = new TreeSet<Integer>();
     }
 
     /**
-     * @return the replicationDegree
+     * @return the desired replication degree as defined by the initiator peer
      */
     public Integer getReplicationDegree() {
         return replicationDegree;
     }
 
     /**
-     * @return the backupDegree
+     * @return the backup degree, i.e., the number of peers who backed up this chunk
+     *         (including this peer)
      */
     public Integer getBackupDegree() {
-        return backupDegree;
+        return this.ownerPeers.size() + 1;
     }
 
     /**
-     * @param backupDegree the backupDegree to set
+     * Adds a new peer to the list of peers who stored this chunk
      */
-    public void setBackupDegree(Integer backupDegree) {
-        this.backupDegree = backupDegree;
+    public void addOwnerPeer(Integer peerId) {
+        this.ownerPeers.add(peerId);
     }
 
-    /**
-     * Increase the backup degree
-     */
-    public void increaseBackupDegree() {
-        this.backupDegree++;
-    }
-
-    /**
-     * Decrease the backup degree
-     */
-    public void decreaseBackupDegree() {
-        this.backupDegree--;
-    }
 }

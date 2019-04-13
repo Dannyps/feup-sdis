@@ -435,12 +435,12 @@ public class Peer implements RMIRemote {
 	 * @param fileId
 	 * @param chunkNo
 	 */
-	public void updateLocalChunk(String fileId, Integer chunkNo) {
+	public void updateLocalChunkOwners(String fileId, Integer chunkNo, Integer peerId) {
 		ConcurrentHashMap<Integer, ChunkInfo> fileChunks = this.backedUpChunks.get(fileId);
 		if (fileChunks != null) {
 			if (fileChunks.containsKey(chunkNo)) {
 				// chunk exists locally
-				fileChunks.get(chunkNo).increaseBackupDegree();
+				fileChunks.get(chunkNo).addOwnerPeer(peerId);
 				System.out.println(String.format("File: %s\tChunk: %d -> Backup degree %d", fileId, chunkNo,
 						fileChunks.get(chunkNo).getBackupDegree()));
 			}
