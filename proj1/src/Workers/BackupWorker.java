@@ -6,6 +6,7 @@ import Messages.PutChunkMessage;
 import Shared.Peer;
 import Shared.PeerState;
 import Utils.Chunk;
+import Utils.ChunkInfo;
 import Utils.ConsoleColours;
 import Utils.FileInfo;
 import Utils.PrintMessage;
@@ -69,12 +70,13 @@ public class BackupWorker implements Runnable {
             }
 
             // get number of peers who acknowledged that they have stored the chunk
-            Integer peersAck = finfo.getChunk(this.chunkno).getBackupDegree();
+            ChunkInfo c = finfo.getChunk(this.chunkno);
+            Integer peersAck = 0;
+            if (c != null)
+                peersAck = c.getBackupDegree();
+
             PrintMessage.p("CHUNK ACK", String.format("Number of peers who stored (fileId,chunk) (%s, %d): %d",
                     this.chunk.getFileIdHexStr(), this.chunk.getChunkNo(), peersAck));
-
-            // TODO
-            // fi.setBD(this.chunkno, peers.size());
 
             if (peersAck < this.chunk.getReplicationDegree()) {
                 // update number of tries and waiting delay
