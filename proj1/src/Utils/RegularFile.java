@@ -47,13 +47,6 @@ public class RegularFile {
     }
 
     /**
-     * @return the fileID
-     */
-    public byte[] getFileID() {
-        return fileID;
-    }
-
-    /**
      * @return the cHUNK_MAX_SIZE
      */
     public static int getCHUNK_MAX_SIZE() {
@@ -171,9 +164,13 @@ public class RegularFile {
         return chunks;
     }
 
-    public byte[] getFileId() throws IOException {
+    public byte[] getFileId() {
         if (this.fileID == null)
-            getFileHash();
+            try {
+                getFileHash();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         return this.fileID;
     }
 
@@ -182,7 +179,6 @@ public class RegularFile {
             try {
                 getFileHash();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 

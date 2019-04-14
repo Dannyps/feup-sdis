@@ -36,6 +36,8 @@ public class DeleteSenderWorker implements Runnable {
             dp.setSocketAddress(this.peer.getAddrMC().getInetSocketAddress());
             this.peer.getMcSocket().send(dp);
             PrintMessage.p("Sent", msg);
+            // remove file from the list of backed up files
+            this.peer.getState().removeLocalFileBackup(this.finfo.getFilename());
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {

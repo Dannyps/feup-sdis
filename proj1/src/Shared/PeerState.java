@@ -36,6 +36,7 @@ public class PeerState {
         this.storedChunks = new ConcurrentHashMap<>();
     }
 
+    // #region Methods for managing local file backups
     /**
      * Initializes a new entry for a new local file backup
      * 
@@ -46,7 +47,7 @@ public class PeerState {
         FileInfo info;
 
         try {
-            info = new FileInfo(file.getPathName(), file.getFileID(), replicationDegree, file.getChunks().size());
+            info = new FileInfo(file.getPathName(), file.getFileId(), replicationDegree, file.getChunks().size());
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -60,6 +61,36 @@ public class PeerState {
     }
 
     /**
+     * Tells wether a file with a given id was backed up or not
+     * 
+     * @param fileId
+     */
+    public boolean isLocalFileBackedUp(String filename) {
+        return this.localBackedUpFiles.containsKey(filename);
+    }
+
+    /**
+     * 
+     * @param filename
+     * @return The FileInfo object for the associated backed up file, or null if it
+     *         doesn't exist
+     */
+    public FileInfo getLocalBackedUpFileInfo(String filename) {
+        return this.localBackedUpFiles.get(filename);
+    }
+
+    /**
+     * Removes an entry from the own backed up files. Useful when the initiator peer
+     * deletes a file from the file system
+     * 
+     * @param fileId
+     */
+    public void removeLocalFileBackup(String fileId) {
+        // if the key doesn't exist, nothing happens
+        this.localBackedUpFiles.remove(fileId);
+    }
+
+    /**
      * Upon a STORED message in response to a PUTCHUNK message, it updates the list
      * of owners of the chunk
      * 
@@ -68,6 +99,8 @@ public class PeerState {
      * @param peerId
      */
     public void addLocalFileBackupChunkOwner(String fileId, Integer chunkNo, Integer ownerPeer) {
+        // TODO it must iterate over all backed up files and find if one of them has the
+        // said fileId
         FileInfo finfo = this.localBackedUpFiles.get(fileId);
         if (finfo != null) {
             finfo.addChunkOwner(chunkNo, ownerPeer);
@@ -83,12 +116,14 @@ public class PeerState {
      * @param ownerPeer
      */
     public void removeLocalFileBackupChunkOwner(String fileId, Integer chunkNo, Integer ownerPeer) {
+        // TODO same as above
         FileInfo finfo = this.localBackedUpFiles.get(fileId);
         if (finfo != null) {
             finfo.removeChunkOwner(chunkNo, ownerPeer);
         }
     }
 
+    // #endregion
     /**
      * Registers the ocurrence of a new chunk backup request (doesn't necessarially
      * mean any peer has stored it yet)

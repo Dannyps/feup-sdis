@@ -225,10 +225,10 @@ public class Peer implements RMIRemote {
 	}
 
 	public int delete(String filename) {
-		if (this.myBackedUpFiles.containsKey(filename)) {
+		if (this.state.isLocalFileBackedUp(filename)) {
 
 			// this file was backed up
-			this.executor.submit(new DeleteSenderWorker(this.myBackedUpFiles.get(filename)));
+			this.executor.submit(new DeleteSenderWorker(this.state.getLocalBackedUpFileInfo(filename)));
 			return 0;
 		} else {
 			PrintMessage.p("DELETE FILE",

@@ -13,7 +13,7 @@ public class FileInfo implements Serializable {
     // The original filename from whom this chunk belongs to
     String filename;
     // the file identifier hash as hexadecimal string
-    byte[] fileIdHex;
+    byte[] fileId;
     // the replication degree (specified when the backup was made)
     int rdegree = 0;
     Integer numChunks;
@@ -27,12 +27,13 @@ public class FileInfo implements Serializable {
      * @param fileIdHex The hexadecimal file hash string
      * @param chunkNo   The amount of chunks needed for this file
      */
-    public FileInfo(String filename, byte[] fileIdHex, int rdegree, int numChunks) {
+    public FileInfo(String filename, byte[] fileId, int rdegree, int numChunks) {
         this.filename = filename;
-        this.fileIdHex = fileIdHex;
+        this.fileId = fileId;
         this.rdegree = rdegree;
         this.numChunks = numChunks;
         this.chunkBDs = new ConcurrentHashMap<Integer, Integer>();
+        this.chunks = new ConcurrentHashMap<Integer, ChunkInfo>();
     }
 
     /**
@@ -77,10 +78,10 @@ public class FileInfo implements Serializable {
     }
 
     public byte[] getFileId() {
-        return fileIdHex;
+        return fileId;
     }
 
     public String getFileIdHex() {
-        return Hash.getHexHash(this.fileIdHex);
+        return Hash.getHexHash(this.fileId);
     }
 }
