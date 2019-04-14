@@ -6,7 +6,6 @@ import Messages.PutChunkMessage;
 import Shared.Peer;
 import Shared.PeerState;
 import Utils.Chunk;
-import Utils.ChunkInfo;
 import Utils.ConsoleColours;
 import Utils.FileInfo;
 import Utils.PrintMessage;

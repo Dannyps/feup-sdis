@@ -48,7 +48,7 @@ public class DeleteWorker implements Runnable {
             if (new File(ServiceFileSystem.getBackupFilePath(fileIdHex)).exists()) {
                 Path p = Paths.get(ServiceFileSystem.getBackupFilePath(fileIdHex));
                 this.deleteDirectory(p);
-                Peer.getInstance().deleteLocalFile(fileIdHex);
+                Peer.getInstance().getState().removeLocalFileBackup(fileIdHex);
                 PrintMessage.p("DELETE FILE", "Deleted all chunks for file " + fileIdHex);
             }
         } catch (InvalidPathException e) {

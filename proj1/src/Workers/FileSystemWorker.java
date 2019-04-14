@@ -10,12 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ConcurrentHashMap;
-
 import Shared.Peer;
-import Utils.ChunkInfo;
+import Shared.PeerState;
 import Utils.ConsoleColours;
-import Utils.FileInfo;
 import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
 
@@ -34,92 +31,53 @@ public class FileSystemWorker implements Runnable {
         return f;
     }
 
-    public static ConcurrentHashMap<String, FileInfo> loadMyBackedUpFiles(Integer peerId) {
-        Path p = Paths.get(ServiceFileSystem.getBackedUpFilesPersistentDataPath(peerId));
+    public static PeerState loadPeerState(Integer peerId) {
+        Path p = Paths.get(ServiceFileSystem.getPeerStateDataPath(peerId));
         if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS))
-            return new ConcurrentHashMap<String, FileInfo>();
+            return new PeerState();
 
         // file exists, load it
-        ConcurrentHashMap<String, FileInfo> obj;
+        PeerState obj;
         try {
-            FileInputStream fiStream = new FileInputStream(
-                    ServiceFileSystem.getBackedUpFilesPersistentDataPath(peerId));
+            FileInputStream fiStream = new FileInputStream(ServiceFileSystem.getPeerStateDataPath(peerId));
             ObjectInputStream oiStream = new ObjectInputStream(fiStream);
-            obj = (ConcurrentHashMap<String, FileInfo>) oiStream.readObject();
+            obj = (PeerState) oiStream.readObject();
+            oiStream.close();
             return obj;
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return new ConcurrentHashMap<String, FileInfo>();
+        return new PeerState();
     }
 
-    public static ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> loadLocalChunks(Integer peerId) {
-        Path p = Paths.get(ServiceFileSystem.getLocalChunksPersistentDataPath(peerId));
-        if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS))
-            return new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>();
-
-        // file exists, load it
-        ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> obj;
+    public void savePeerState(PeerState peerState) {
+        String filePath = ServiceFileSystem.getPeerStateDataPath(Peer.getInstance().getPeerId());
         try {
-            FileInputStream fiStream = new FileInputStream(ServiceFileSystem.getLocalChunksPersistentDataPath(peerId));
-            ObjectInputStream oiStream = new ObjectInputStream(fiStream);
-            obj = (ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>) oiStream.readObject();
-            return obj;
+            File f = createIfNotExists(filePath);
+            FileOutputStream foStream = new FileOutputStream(f);
+            ObjectOutputStream ooStream = new ObjectOutputStream(foStream);
+            ooStream.writeObject(peerState);
+            ooStream.flush();
+            ooStream.close();
+            foStream.close();
+            PrintMessage.p("Persistent data refresh", String.format("Updated %s", filePath), ConsoleColours.GREEN_BOLD,
+                    ConsoleColours.GREEN);
         } catch (Exception e) {
+            PrintMessage.p("Persistent data refresh", String.format("Failed to update persistent file %s", filePath),
+                    ConsoleColours.RED_BOLD, ConsoleColours.RED);
             e.printStackTrace();
         }
-
-        return new ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>>();
     }
 
     @Override
     public void run() {
-        ConcurrentHashMap<String, FileInfo> myBackedUpFiles = Peer.getInstance().getMyBackedUpFiles();
-        ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> backedUpChunks = Peer.getInstance()
-                .getBackedUpChunks();
+        PeerState peerState = Peer.getInstance().getState();
 
         while (true) {
-
+            savePeerState(peerState);
             try {
-                File f = createIfNotExists(ServiceFileSystem.getBackedUpFilesPersistentDataPath());
-                FileOutputStream foStream = new FileOutputStream(f);
-                ObjectOutputStream ooStream = new ObjectOutputStream(foStream);
-                ooStream.writeObject(myBackedUpFiles);
-                ooStream.flush();
-                ooStream.close();
-                foStream.close();
-                PrintMessage.p("Persistent data refresh",
-                        String.format("Updated %s", ServiceFileSystem.getBackedUpFilesPersistentDataPath()),
-                        ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-            } catch (Exception e) {
-                PrintMessage.p("Persistent data refresh",
-                        String.format("Failed to update persistent file %s",
-                                ServiceFileSystem.getBackedUpFilesPersistentDataPath()),
-                        ConsoleColours.RED_BOLD, ConsoleColours.RED);
-                e.printStackTrace();
-            }
-
-            try {
-                File f = createIfNotExists(ServiceFileSystem.getLocalChunksPersistentDataPath());
-                FileOutputStream foStream = new FileOutputStream(f);
-                ObjectOutputStream ooStream = new ObjectOutputStream(foStream);
-                ooStream.writeObject(backedUpChunks);
-                ooStream.flush();
-                ooStream.close();
-                foStream.close();
-                PrintMessage.p("Persistent data refresh",
-                        String.format("Updated %s", ServiceFileSystem.getLocalChunksPersistentDataPath()),
-                        ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
-            } catch (Exception e) {
-                PrintMessage.p("Persistent data refresh",
-                        String.format("Failed to update persistent file %s",
-                                ServiceFileSystem.getLocalChunksPersistentDataPath()),
-                        ConsoleColours.RED_BOLD, ConsoleColours.RED);
-            }
-
-            try {
-                Thread.sleep(10000);
+                Thread.sleep(15000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

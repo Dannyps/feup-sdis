@@ -7,8 +7,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -43,17 +41,6 @@ public class Peer implements RMIRemote {
 	private ProtocolVersion protoVer;
 	/** Numeric identifier for the peer. unique among all peers on the LAN */
 	private Integer serverId;
-	/**
-	 * Tracks local backed up files, i.e, the files that this peer has requested to
-	 * other peers to back up. It maps each filename, the key, to an instance
-	 * {@link Utils.FileInfo}, which contains the desired replication degree, the
-	 * actual replication degree, and more
-	 * 
-	 * @see Utils.FileInfo
-	 */
-	private ConcurrentHashMap<String, FileInfo> myBackedUpFiles;
-
-	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> backedUpChunks;
 	/**
 	 * Keeps track of the lastest chunk headers received through MDR channel. It
 	 * maps file identifiers in hexadecimal format to a new table. The later maps
@@ -103,14 +90,11 @@ public class Peer implements RMIRemote {
 		this.mdbSocket = bindToMultiCast(MDB);
 		this.mdrSocket = bindToMultiCast(MDR);
 
-		// initialize auxiliar data structures
-		this.myBackedUpFiles = FileSystemWorker.loadMyBackedUpFiles(serverId);
-		this.backedUpChunks = FileSystemWorker.loadLocalChunks(serverId);
-
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
 
-		this.state = new PeerState();
+		// load persistent data
+		this.state = FileSystemWorker.loadPeerState(serverId);
 
 		// instatiate thread pool
 		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
@@ -135,7 +119,6 @@ public class Peer implements RMIRemote {
 			System.out.println("[FATAL] Could not enter multicast group " + ap + ": " + e.getMessage());
 			System.exit(6);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.exit(6);
 		}
@@ -348,16 +331,6 @@ public class Peer implements RMIRemote {
 		return this.state;
 	}
 
-	@Deprecated
-	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
-		return this.myBackedUpFiles;
-	}
-
-	@Deprecated
-	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> getBackedUpChunks() {
-		return this.backedUpChunks;
-	}
-
 	/**
 	 * @return the receivedChunkInfo
 	 */
@@ -370,68 +343,6 @@ public class Peer implements RMIRemote {
 	 */
 	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> getReceivedChunkData() {
 		return receivedChunkData;
-	}
-
-	/**
-	 * Check if the pair (fileId, chunkNo) already exists locally on this peer
-	 * 
-	 * @param fileId
-	 * @param chunkNo
-	 * @return True if the chunk exists locally, false otherwise
-	 */
-	public Boolean isChunkLocal(String fileId, Integer chunkNo) {
-		if (this.backedUpChunks.containsKey(fileId))
-			if (this.backedUpChunks.get(fileId).contains(chunkNo))
-				return true;
-		return false;
-	}
-
-	/**
-	 * Registers that a new chunk was created locally upon backup request of other
-	 * Peers
-	 * 
-	 * @param fileId  The file for which some chunk was backed up
-	 * @param chunkNo The chunk identifier that was backed up
-	 * @param info    Information about the chunk (replication degree)
-	 */
-	public void registerLocalChunk(String fileId, Integer chunkNo, ChunkInfo info) {
-		ConcurrentHashMap<Integer, ChunkInfo> fileChunks = this.backedUpChunks.get(fileId);
-		if (fileChunks == null) {
-			fileChunks = new ConcurrentHashMap<Integer, ChunkInfo>();
-			this.backedUpChunks.put(fileId, fileChunks);
-		}
-
-		if (!fileChunks.containsKey(chunkNo)) {
-			fileChunks.put(chunkNo, info);
-		}
-	}
-
-	/**
-	 * 
-	 * @param fileId
-	 * @param chunkNo
-	 */
-	public void updateLocalChunkOwners(String fileId, Integer chunkNo, Integer peerId) {
-		ConcurrentHashMap<Integer, ChunkInfo> fileChunks = this.backedUpChunks.get(fileId);
-		if (fileChunks != null) {
-			if (fileChunks.containsKey(chunkNo)) {
-				// chunk exists locally
-				fileChunks.get(chunkNo).addOwnerPeer(peerId);
-				System.out.println(String.format("File: %s\tChunk: %d -> Backup degree %d", fileId, chunkNo,
-						fileChunks.get(chunkNo).getBackupDegree()));
-			}
-		}
-	}
-
-	/**
-	 * Removes all information regarding a backed up file (to be called upon
-	 * receiving a DELETE message)
-	 * 
-	 * @param fileId
-	 */
-	public void deleteLocalFile(String fileId) {
-		if (this.backedUpChunks.contains(fileId))
-			this.backedUpChunks.remove(fileId);
 	}
 
 	// #endregion

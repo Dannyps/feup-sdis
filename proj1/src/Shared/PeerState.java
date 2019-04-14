@@ -1,12 +1,14 @@
 package Shared;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import Utils.ChunkInfo;
 import Utils.FileInfo;
 import Utils.RegularFile;
 
-public class PeerState {
+public class PeerState implements Serializable {
+    private static final long serialVersionUID = -3867291910887949832L;
     private long storageCapacity = (long) 64E6;
     private long storageUsed = 0;
 

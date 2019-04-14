@@ -36,31 +36,7 @@ public class ServiceFileSystem {
      * 
      * @return
      */
-    public static String getLocalChunksPersistentDataPath() {
-        return String.format("peer%d/local_chunks.obj", Peer.getInstance().getPeerId());
-    }
-
-    /**
-     * 
-     * @return
-     */
-    public static String getLocalChunksPersistentDataPath(Integer peerId) {
-        return String.format("peer%d/local_chunks.obj", peerId);
-    }
-
-    /**
-     * 
-     * @return
-     */
-    public static String getBackedUpFilesPersistentDataPath() {
-        return String.format("peer%d/my_backedup_files.obj", Peer.getInstance().getPeerId());
-    }
-
-    /**
-     * 
-     * @return
-     */
-    public static String getBackedUpFilesPersistentDataPath(Integer peerId) {
-        return String.format("peer%d/my_backedup_files.obj", peerId);
+    public static String getPeerStateDataPath(Integer peerId) {
+        return String.format("peer%d/internal_state.obj", peerId);
     }
 }

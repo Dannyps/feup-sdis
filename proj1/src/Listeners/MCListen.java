@@ -5,7 +5,6 @@ import java.net.MulticastSocket;
 import Messages.GetChunkMessage;
 import Messages.Message;
 import Messages.MessageType;
-import Shared.Peer;
 import Utils.PrintMessage;
 import Workers.ChunkSenderWorker;
 import Workers.DeleteWorker;
@@ -27,8 +26,6 @@ public class MCListen extends ChannelListener {
     protected void newMessageHandler(Message msg) {
         PrintMessage.p("Received", msg);
         if (msg.getMessageType() == MessageType.STORED && msg.getSenderId() != this.serverId) {
-            Peer.getInstance().updateLocalChunkOwners(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
-
             if (this.peer.getState().isLocalFileByFileId(msg.getFileIdHexStr())) {
                 // if the STORED message is a response to a local file backup, update the list
                 // of owner peers of the said file chunk
