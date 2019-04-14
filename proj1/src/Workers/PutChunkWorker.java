@@ -9,6 +9,7 @@ import Messages.PutChunkMessage;
 import Messages.StoredMessage;
 import Shared.Peer;
 import Shared.PeerState;
+import Utils.ConsoleColours;
 import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
 
@@ -59,12 +60,22 @@ public class PutChunkWorker implements Runnable {
         Integer chunkNo = this.msg.getChunkNo();
 
         // add a new reference for tracking this chunk, if it doesn't exist already
-        this.peerState.addChunkBackup(fileIdHex, chunkNo, this.msg.getReplicationDegree());
+        this.peerState.addChunkBackup(fileIdHex, chunkNo, this.msg.getReplicationDegree(),
+                this.msg.getRawData().length);
 
         // check if the chunk is already backed up locally
         // if not, store the chunk locally
         if (!this.peerState.isChunkStoredLocally(fileIdHex, chunkNo)) {
-            // not local, attempt to write it to the local file system
+            // check for available disk space
+            if (!this.peerState.canStoreChunkLocally(this.msg.getRawData().length)) {
+                // not enough space
+                PrintMessage.p("REJECT CHUNK",
+                        String.format("Not enough space available for storing the chunk (%s, %d)", fileIdHex, chunkNo),
+                        ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
+                return;
+            }
+            // not local and space is available, attempt to write it to the local file
+            // system
             if (!storeChunk(fileIdHex, chunkNo))
                 return; // failed to store chunk on disk
             // chunk is now locally stored, update ChunkInfo and set it as locally stored

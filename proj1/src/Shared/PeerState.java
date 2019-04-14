@@ -9,8 +9,8 @@ import Utils.RegularFile;
 
 public class PeerState implements Serializable {
     private static final long serialVersionUID = -3867291910887949832L;
-    private long storageCapacity = (long) 64E6;
-    private long storageUsed = 0;
+    private long storageCapacity; // bytes
+    private long storageUsed; // bytes
 
     /**
      * Tracks local backed up files, i.e, the files that this peer has requested to
@@ -34,6 +34,8 @@ public class PeerState implements Serializable {
     public PeerState() {
         this.localBackedUpFiles = new ConcurrentHashMap<>();
         this.storedChunks = new ConcurrentHashMap<>();
+        this.storageUsed = 0;
+        this.storageCapacity = 64000 * 5; // bytes
     }
 
     // #region Methods for managing local file backups
@@ -149,7 +151,7 @@ public class PeerState implements Serializable {
      * @param chunkNo
      * @param replicationDegree
      */
-    public void addChunkBackup(String fileId, Integer chunkNo, Integer replicationDegree) {
+    public void addChunkBackup(String fileId, Integer chunkNo, Integer replicationDegree, Integer chunkSize) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
         if (chunks == null) {
             chunks = new ConcurrentHashMap<Integer, ChunkInfo>();
@@ -158,9 +160,19 @@ public class PeerState implements Serializable {
 
         ChunkInfo cinfo = chunks.get(chunkNo);
         if (cinfo == null) {
-            cinfo = new ChunkInfo(replicationDegree);
+            cinfo = new ChunkInfo(replicationDegree, chunkSize);
             chunks.put(chunkNo, cinfo);
         }
+    }
+
+    /**
+     * Tells wether there's free space for storing a chunk of the given size
+     * 
+     * @param chunkSize
+     * @return
+     */
+    public boolean canStoreChunkLocally(Integer chunkSize) {
+        return ((this.storageCapacity - this.storageUsed) >= chunkSize);
     }
 
     /**
@@ -172,7 +184,12 @@ public class PeerState implements Serializable {
     public void setChunkBackupAsLocal(String fileId, Integer chunkNo) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
         if (chunks != null && chunks.containsKey(chunkNo)) {
-            chunks.get(chunkNo).setLocalStored();
+            // ensure there's enough free space
+            if (this.canStoreChunkLocally(chunks.get(chunkNo).getChunkSize())) {
+                chunks.get(chunkNo).setLocalStored();
+                this.storageUsed += chunks.get(chunkNo).getChunkSize();
+            }
+
         }
     }
 
