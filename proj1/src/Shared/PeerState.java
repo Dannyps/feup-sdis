@@ -65,8 +65,22 @@ public class PeerState {
      * 
      * @param fileId
      */
-    public boolean isLocalFileBackedUp(String filename) {
+    public boolean isLocalFileByFileName(String filename) {
         return this.localBackedUpFiles.containsKey(filename);
+    }
+
+    /**
+     * Check if there's a local file backup whose fileId matches the parameter
+     * 
+     * @param fileIdHex
+     * @return
+     */
+    public boolean isLocalFileByFileId(String fileIdHex) {
+        for (FileInfo fi : this.localBackedUpFiles.values()) {
+            if (fi.getFileIdHex().equals(fileIdHex))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -91,19 +105,19 @@ public class PeerState {
     }
 
     /**
-     * Upon a STORED message in response to a PUTCHUNK message, it updates the list
-     * of owners of the chunk
+     * When a peer responds to the PUTCHUNK request of this initiator peer with a
+     * STORED message, update the list of peers who own a chunk of the local backed
+     * up file
      * 
      * @param fileId
      * @param chunkNo
      * @param peerId
      */
-    public void addLocalFileBackupChunkOwner(String fileId, Integer chunkNo, Integer ownerPeer) {
-        // TODO it must iterate over all backed up files and find if one of them has the
-        // said fileId
-        FileInfo finfo = this.localBackedUpFiles.get(fileId);
-        if (finfo != null) {
-            finfo.addChunkOwner(chunkNo, ownerPeer);
+    public void addLocalFileChunkOwner(String fileId, Integer chunkNo, Integer ownerPeer) {
+        for (FileInfo fi : this.localBackedUpFiles.values()) {
+            if (fi.getFileIdHex().equals(fileId)) {
+                fi.addChunkOwner(chunkNo, ownerPeer);
+            }
         }
     }
 

@@ -31,6 +31,14 @@ public class MCListen extends ChannelListener {
             Peer.getInstance().chunkStored(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
             Peer.getInstance().updateLocalChunkOwners(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
 
+            if (this.peer.getState().isLocalFileByFileId(msg.getFileIdHexStr())) {
+                // if the STORED message is a response to a local file backup, update the list
+                // of owner peers of the said file chunk
+                this.peer.getState().addLocalFileChunkOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
+            } else {
+                // some peer stored some chunk, and I must keep track of it
+
+            }
             this.peer.getState().addStoredChunkOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
         } else if (msg.getMessageType() == MessageType.GETCHUNK && msg.getSenderId() != this.serverId) {
             // launch thread to reply requested chunk

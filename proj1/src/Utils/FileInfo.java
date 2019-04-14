@@ -43,8 +43,15 @@ public class FileInfo implements Serializable {
      * @param ownerPeer
      */
     public void addChunkOwner(Integer chunkNo, Integer ownerPeer) {
-        if (this.chunks.containsKey(chunkNo))
-            this.chunks.get(chunkNo).addOwnerPeer(ownerPeer);
+        ChunkInfo c;
+        if (this.chunks.containsKey(chunkNo)) {
+            c = this.chunks.get(chunkNo);
+        } else {
+            c = new ChunkInfo(this.rdegree);
+            this.chunks.put(chunkNo, c);
+        }
+
+        c.addOwnerPeer(ownerPeer);
     }
 
     public void removeChunkOwner(Integer chunkNo, Integer ownerPeer) {
