@@ -3,10 +3,15 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import Shared.RMIRemote;
+import Utils.ChunkInfo;
 import Utils.ConsoleColours;
+import Utils.FileInfo;
 import Utils.PrintMessage;
+import Shared.PeerState;
 
 /**
  * Client Interface
@@ -150,9 +155,30 @@ public class TestApp {
 	}
 
 	private static boolean state(RMIRemote stub) throws RemoteException {
-		String s = stub.getServiceState();
+		PeerState s = stub.getServiceState();
 
-		System.out.println(s);
+		// display information regarding local service state
+
+		// display own backed up files
+		ConcurrentHashMap<String, FileInfo> localBackedUpFiles = s.getLocalBackedUpFiles();
+		if (localBackedUpFiles.size() == 0)
+			System.out.println(ConsoleColours.BLUE_BOLD_BRIGHT + "No backed up files" + ConsoleColours.RESET);
+		for (Map.Entry<String, FileInfo> backedUpFile : localBackedUpFiles.entrySet()) {
+			String filename = backedUpFile.getKey();
+			FileInfo finfo = backedUpFile.getValue();
+			System.out.println(ConsoleColours.BLUE_BOLD_BRIGHT + "FILE" + ConsoleColours.RESET);
+			System.out.println(String.format("\tFile name: %s", filename));
+			System.out.println(String.format("\tFile Id: %s", finfo.getFileIdHex()));
+			System.out.println(String.format("\tDesired replication degree: %d", finfo.getRdegree()));
+			System.out.println(String.format("\tNumber of chunks: %d", finfo.getNumberChunks()));
+			// show chunks
+			for (Map.Entry<Integer, ChunkInfo> chunk : finfo.getChunks().entrySet()) {
+				System.out.println(ConsoleColours.RED_BOLD_BRIGHT + "\tCHUNK" + ConsoleColours.RESET);
+				System.out.println(String.format("\t\tChunk Id: %s", chunk.getKey()));
+				System.out.println(
+						String.format("\t\tPerceived Replication Degree: %d", chunk.getValue().getBackupDegree()));
+			}
+		}
 		return true;
 	}
 }

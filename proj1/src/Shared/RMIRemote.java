@@ -50,5 +50,5 @@ public interface RMIRemote extends Remote {
 
     int reclaim(int a) throws RemoteException;
 
-    String getServiceState() throws RemoteException;
+    PeerState getServiceState() throws RemoteException;
 }

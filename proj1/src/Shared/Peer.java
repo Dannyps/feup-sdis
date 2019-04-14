@@ -190,12 +190,26 @@ public class Peer implements RMIRemote {
 		}
 	}
 
-	public int reclaim(int a) {
+	/**
+	 * Disk space in KB
+	 */
+	public int reclaim(int maximumDiskSpace) {
+		// convert to bytes
+		maximumDiskSpace *= 1000;
+
+		if (this.state.getStorageCapacity() <= maximumDiskSpace) {
+			// optimistic case where space grows
+			this.state.setStorageCapacity(maximumDiskSpace);
+		} else {
+			// launch worker to handle this
+
+		}
+
 		return 0;
 	}
 
-	public String getServiceState() {
-		return "my state";
+	public PeerState getServiceState() {
+		return this.state;
 	}
 
 	public static void main(String args[]) {

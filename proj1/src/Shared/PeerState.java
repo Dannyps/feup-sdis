@@ -256,4 +256,39 @@ public class PeerState implements Serializable {
     }
 
     // #endregion
+
+    /**
+     * @return the storageCapacity
+     */
+    public long getStorageCapacity() {
+        return storageCapacity;
+    }
+
+    /**
+     * @param storageCapacity the storageCapacity to set in bytes
+     */
+    public void setStorageCapacity(long storageCapacity) {
+        this.storageCapacity = storageCapacity;
+    }
+
+    /**
+     * @return the storageUsed
+     */
+    public long getStorageUsed() {
+        return storageUsed;
+    }
+
+    /**
+     * @return the localBackedUpFiles
+     */
+    public ConcurrentHashMap<String, FileInfo> getLocalBackedUpFiles() {
+        return localBackedUpFiles;
+    }
+
+    /**
+     * @return the storedChunks
+     */
+    public ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> getStoredChunks() {
+        return storedChunks;
+    }
 }
