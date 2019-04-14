@@ -43,7 +43,10 @@ public class ChunkInfo implements Serializable {
      *         (including this peer)
      */
     public Integer getBackupDegree() {
-        return this.ownerPeers.size() + 1;
+        Integer other = this.ownerPeers.size();
+        if (this.isLocal)
+            other++;
+        return other;
     }
 
     /**

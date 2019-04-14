@@ -73,13 +73,6 @@ public class Peer implements RMIRemote {
 	 * worker will construct the file on the local filesystem
 	 */
 	private ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>> receivedChunkData;
-	/**
-	 * Maps fileIds to new map which maps chunk numbers to a set of peer ids who
-	 * stored the chunk TODO is this still needed?
-	 * 
-	 * @deprecated
-	 */
-	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
 
 	private PeerState state;
 
@@ -87,32 +80,6 @@ public class Peer implements RMIRemote {
 	private static Peer single_instance = null;
 	/** Manager for the runnables of this Peer (ThreadPool) */
 	ExecutorService executor;
-
-	/**
-	 * // TODO might not be needed anymore
-	 * 
-	 * @param fileId
-	 * @param chunkNo
-	 * @param peerId
-	 */
-	public void chunkStored(String fileId, Integer chunkNo, Integer peerId) {
-		// check if there's some reference to the said file
-		HashMap<Integer, TreeSet<Integer>> fileChunks = this.storedChunks.get(fileId);
-		if (fileChunks == null) {
-			fileChunks = new HashMap<Integer, TreeSet<Integer>>();
-			this.storedChunks.put(fileId, fileChunks);
-		}
-
-		// check if there's a reference to the said chunk
-		TreeSet<Integer> peers = fileChunks.get(chunkNo);
-		if (peers == null) {
-			peers = new TreeSet<Integer>();
-			fileChunks.put(chunkNo, peers);
-		}
-
-		// store the peer id in the set of peers who stored this tuple (fileid, chunkno)
-		peers.add(peerId);
-	}
 
 	/**
 	 * Construct the singleton Peer
@@ -140,14 +107,13 @@ public class Peer implements RMIRemote {
 		this.myBackedUpFiles = FileSystemWorker.loadMyBackedUpFiles(serverId);
 		this.backedUpChunks = FileSystemWorker.loadLocalChunks(serverId);
 
-		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
 
 		this.state = new PeerState();
 
 		// instatiate thread pool
-		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+		this.executor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 		System.out.println("[INFO] Bound to all three sockets successfully.");
 		PrintMessage.printMessages = true;
@@ -382,26 +348,12 @@ public class Peer implements RMIRemote {
 		return this.state;
 	}
 
-	/**
-	 * Returns a list of peers identifiers which stored the pair (fileId, ChunkNo)
-	 * 
-	 * @param fileId
-	 * @param ChunkNo
-	 * @return
-	 */
-	public TreeSet<Integer> getPeersContainChunk(String fileId, Integer ChunkNo) {
-		// get all stored chunks for the file
-		HashMap<Integer, TreeSet<Integer>> chunks = this.storedChunks.get(fileId);
-		if (chunks == null)
-			return null;
-		// get list of peers who stored the specified chunk
-		return chunks.get(ChunkNo);
-	}
-
+	@Deprecated
 	public ConcurrentHashMap<String, FileInfo> getMyBackedUpFiles() {
 		return this.myBackedUpFiles;
 	}
 
+	@Deprecated
 	public ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> getBackedUpChunks() {
 		return this.backedUpChunks;
 	}

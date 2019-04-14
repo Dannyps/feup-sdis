@@ -103,4 +103,14 @@ public class FileInfo implements Serializable {
     public Integer getNumberChunks() {
         return this.numChunks;
     }
+
+    /**
+     * 
+     * @param chunkNo
+     * @return The {@link Utils.ChunkInfo} object for the request chunk identifier,
+     *         of null if such reference doesn't exist
+     */
+    public ChunkInfo getChunk(Integer chunkNo) {
+        return this.chunks.get(chunkNo);
+    }
 }

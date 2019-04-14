@@ -2,11 +2,11 @@ package Workers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.util.TreeSet;
-
 import Messages.PutChunkMessage;
 import Shared.Peer;
+import Shared.PeerState;
 import Utils.Chunk;
+import Utils.ChunkInfo;
 import Utils.ConsoleColours;
 import Utils.FileInfo;
 import Utils.PrintMessage;
@@ -18,6 +18,7 @@ public class BackupWorker implements Runnable {
     private Peer peer;
     private String filename;
     private int chunkno;
+    private PeerState peerState;
 
     /**
      * 
@@ -28,6 +29,7 @@ public class BackupWorker implements Runnable {
     public BackupWorker(String fname, Chunk chunk, int chunkno) {
         this.chunk = chunk;
         this.peer = Peer.getInstance(); // get a reference to the singleton peer
+        this.peerState = Peer.getInstance().getState();
         this.protocolVersion = this.peer.getProtocolVersion();
         this.serverId = this.peer.getPeerId();
         this.filename = fname;
@@ -46,7 +48,7 @@ public class BackupWorker implements Runnable {
         byte[] rawMsg = msg.getMessage();
         // create the datagram
         DatagramPacket dp = new DatagramPacket(rawMsg, rawMsg.length, this.peer.getAddrMDB().getInetSocketAddress());
-        FileInfo fi = this.peer.getMyBackedUpFiles().get(filename);
+        FileInfo finfo = this.peerState.getLocalBackedUpFileInfo(filename);
         while (numberTries < 5 && !isReplicationDegreeMet) {
             // send the PUTCHUNK message
             try {
@@ -67,49 +69,48 @@ public class BackupWorker implements Runnable {
                 e.printStackTrace();
             }
 
-            // get list of peers which stored the chunk successfully
-            TreeSet<Integer> peers = this.peer.getPeersContainChunk(this.chunk.getFileIdHexStr(),
-                    this.chunk.getChunkNo());
-            System.out.println(ConsoleColours.CYAN
-                    + String.format("Number of peers who stored (fileId,chunk) (%s, %d): %d",
-                            this.chunk.getFileIdHexStr(), this.chunk.getChunkNo(), peers.size())
-                    + ConsoleColours.RESET);
+            // get number of peers who acknowledged that they have stored the chunk
+            Integer peersAck = finfo.getChunk(this.chunkno).getBackupDegree();
+            PrintMessage.p("CHUNK ACK", String.format("Number of peers who stored (fileId,chunk) (%s, %d): %d",
+                    this.chunk.getFileIdHexStr(), this.chunk.getChunkNo(), peersAck));
 
-            fi.setBD(this.chunkno, peers.size());
+            // TODO
+            // fi.setBD(this.chunkno, peers.size());
 
-            if (peers == null || peers.size() < this.chunk.getReplicationDegree()) {
-                // replication degree not met
-                System.out.println(
-                    ConsoleColours.YELLOW +
-                    String.format("Replication degree not met yet for (fileId,chunk): (%s, %d)", 
-                        this.chunk.getFileIdHexStr(),
-                        this.chunk.getChunkNo()
-                    ) + ConsoleColours.RESET
-                );
+            if (peersAck < this.chunk.getReplicationDegree()) {
+                // update number of tries and waiting delay
                 numberTries++;
                 waitingDelay *= 2;
+                // replication degree not met
+                if (numberTries != 5)
+                    PrintMessage.p("CHUNK BACKUP",
+                            String.format("Replication degree not met yet for (fileId,chunk): (%s, %d)",
+                                    this.chunk.getFileIdHexStr(), this.chunk.getChunkNo()),
+                            ConsoleColours.YELLOW_BOLD_BRIGHT, ConsoleColours.YELLOW);
+
             } else {
                 isReplicationDegreeMet = true;
             }
         }
 
-        if(isReplicationDegreeMet) {
-            System.out.println(
-                ConsoleColours.GREEN + 
-                String.format("Replication degree MET for (fileId,chunk): (%s, %d)", 
-                    this.chunk.getFileIdHexStr(),
-                    this.chunk.getChunkNo()
-                ) + ConsoleColours.RESET
-            );
+        // display wether the chunk was successfully replicated among the peers or not
+        if (isReplicationDegreeMet) {
+            PrintMessage.p(
+                    "CHUNK BACKUP", String.format("Replication degree MET for (fileId,chunk): (%s, %d)",
+                            this.chunk.getFileIdHexStr(), this.chunk.getChunkNo()),
+                    ConsoleColours.GREEN_BOLD_BRIGHT, ConsoleColours.GREEN);
         } else {
-            System.out.println(
-                ConsoleColours.RED + 
-                String.format("Replication degree NOT MET for (fileId,chunk): (%s, %d)", 
-                    this.chunk.getFileIdHexStr(),
-                    this.chunk.getChunkNo()
-                ) + ConsoleColours.RESET
-            );
+            PrintMessage.p("CHUNK BACKUP",
+                    String.format("Replication degree NOT MET for (fileId,chunk): (%s, %d)",
+                            this.chunk.getFileIdHexStr(), this.chunk.getChunkNo()),
+                    ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
         }
-        PrintMessage.p("Local info", "File: "+ fi.getFilename() +" chunk " + chunkno + " got a replication degree of " + Integer.toString(fi.getChunks().get(chunkno)) + ". Desired: "+Integer.toString(fi.getRdegree()), ConsoleColours.PURPLE_BOLD_BRIGHT, ConsoleColours.PURPLE_BRIGHT);
+
+        // summary
+        PrintMessage.p("Local info",
+                "File: " + finfo.getFilename() + " chunk " + chunkno + " got a replication degree of "
+                        + finfo.getChunk(chunkno).getBackupDegree() + ". Desired: "
+                        + Integer.toString(finfo.getRdegree()),
+                ConsoleColours.PURPLE_BOLD_BRIGHT, ConsoleColours.PURPLE_BRIGHT);
     }
 }

@@ -205,6 +205,22 @@ public class PeerState {
     }
 
     /**
+     * 
+     * @param fileId
+     * @param chunkNo
+     * @return number of peers who stored this chunk (including this peer if that's
+     *         the case)
+     */
+    public Integer getChunkBackupNumOwners(String fileId, Integer chunkNo) {
+        ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
+        if (chunks != null && chunks.containsKey(chunkNo)) {
+            return chunks.get(chunkNo).getReplicationDegree();
+        }
+
+        return 0;
+    }
+
+    /**
      * Check if there's any reference for a stored chunk with pair (fileId, chunkNo)
      * 
      * @param fileId
