@@ -32,6 +32,8 @@ public class FileInfo implements Serializable {
         this.fileId = fileId;
         this.rdegree = rdegree;
         this.numChunks = numChunks;
+        // TODO chunkBDs are redundant, because each ChunkInfo has a list of peers who
+        // own the chunk
         this.chunkBDs = new ConcurrentHashMap<Integer, Integer>();
         this.chunks = new ConcurrentHashMap<Integer, ChunkInfo>();
     }
@@ -59,6 +61,7 @@ public class FileInfo implements Serializable {
             this.chunks.get(chunkNo).removeOwnerPeer(ownerPeer);
     }
 
+    @Deprecated
     public void setBD(Integer chunkNo, Integer bd) {
         this.chunkBDs.put(chunkNo, bd);
     }
@@ -66,6 +69,7 @@ public class FileInfo implements Serializable {
     /**
      * @return the chunks
      */
+    @Deprecated
     public ConcurrentHashMap<Integer, Integer> getChunks() {
         return this.chunkBDs;
     }
@@ -90,5 +94,13 @@ public class FileInfo implements Serializable {
 
     public String getFileIdHex() {
         return Hash.getHexHash(this.fileId);
+    }
+
+    /**
+     * 
+     * @return The number of chunks that compose this file
+     */
+    public Integer getNumberChunks() {
+        return this.numChunks;
     }
 }

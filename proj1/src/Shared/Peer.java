@@ -180,13 +180,6 @@ public class Peer implements RMIRemote {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
 
-		// try {
-		// this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(),
-		// f.getReplicationDegree()));
-		// } catch (IOException e1) {
-		// // TODO Auto-generated catch block
-		// e1.printStackTrace();
-		// }
 		this.state.addLocalFileBackup(f, replicationDegree);
 		try {
 			lst = f.getChunks();
@@ -205,15 +198,25 @@ public class Peer implements RMIRemote {
 
 	public int restore(String filename) {
 		try {
-			FileInfo fi = this.myBackedUpFiles.get(filename);
+			FileInfo fi = this.state.getLocalBackedUpFileInfo(filename);
+			// check if the file was backed up. If not, report it and abort
+			if (fi == null) {
+				PrintMessage.p("Restore failed",
+						String.format("Can't restore file %s because it was never backed up", filename),
+						ConsoleColours.RED_BOLD, ConsoleColours.RED);
+				return -1;
+			}
+			// get the file identifier
 			byte[] fileId = fi.getFileId();
-
-			for (int cno = 0; cno < fi.getChunks().size(); cno++) {
+			// request all chunks of this file
+			for (int cno = 0; cno < fi.getNumberChunks(); cno++) {
 				GetChunkMessage msg = new GetChunkMessage(this.protoVer.getV(), this.serverId, fileId, cno);
 				PrintMessage.p("Created GETCHUNK", msg.toString(), ConsoleColours.GREEN_BOLD, ConsoleColours.GREEN);
 				this.executor.submit(new RestoreWorker(msg, cno));
 			}
 
+			// Launch a watcher that tracks wether all chunks were received or not
+			// It may also re-try to request some of the missing chunks
 			ChunkReceiverWatcher watcher = new ChunkReceiverWatcher(fi);
 			Thread t = new Thread(watcher);
 			t.start();

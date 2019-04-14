@@ -1,5 +1,6 @@
 package Workers;
 
+import java.io.Console;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,16 +20,18 @@ import Messages.GetChunkMessage;
  * have already arrived
  */
 public class ChunkReceiverWatcher implements Runnable {
-    // reference to the peer
+    /** reference to the singleton peer */
     private Peer peer;
-    // the file information
+    /** the file information */
     FileInfo finfo;
-    // reference to captured chunks through MDR channel
+    /** reference to captured chunks through MDR channel */
     ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> receivedChunkInfo;
 
     /**
+     * Creates a new watcher of the chunks being received upon a local file restore
+     * request
      * 
-     * @param info
+     * @param info Information of the local file to be restored
      */
     public ChunkReceiverWatcher(FileInfo info) {
         this.peer = Peer.getInstance();
@@ -38,41 +41,61 @@ public class ChunkReceiverWatcher implements Runnable {
 
     @Override
     public void run() {
+        // number of attempts so far
         int numAttempts = 0;
+        // flag telling if all expected chunks have arrived
         boolean hasAllChunks = false;
+
         while (numAttempts < 5 && !hasAllChunks) {
+            // some delay to chunks arrive
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
+            // update number of attempts
             numAttempts++;
+
+            // get all chunks received for the file being restored
             ConcurrentHashMap<Integer, Long> chunks = this.receivedChunkInfo.get(this.finfo.getFileIdHex());
             if (chunks == null)
                 continue;
 
-            hasAllChunks = true; // assume we have everything
-            for (int i = 0; i < this.finfo.getChunks().size(); i++) {
+            // assume we have everything
+            hasAllChunks = true;
+
+            // loop through all expected chunks for the file
+            for (int i = 0; i < this.finfo.getNumberChunks(); i++) {
+                // if the chunk with id 'i' was not received yet, then request it again
                 if (!chunks.containsKey(i)) {
+                    // update flag
                     hasAllChunks = false;
-                    System.out.println("Chunk " + i + "not received yet");
+                    // report that some chunk was not received
+                    PrintMessage.p("CHUNK RESTORE",
+                            String.format("Expected chunk not received yet: (%s,%d)", this.finfo.getFileIdHex(), i),
+                            ConsoleColours.YELLOW_BOLD, ConsoleColours.YELLOW);
                     // send message getchunk
                     GetChunkMessage msg = new GetChunkMessage(this.peer.getProtocolVersion(), this.peer.getPeerId(),
                             this.finfo.getFileId(), i);
+                    // launch thread that will simply send the message
                     Thread t = new Thread(new RestoreWorker(msg, i));
                     t.start();
                 }
             }
         }
 
+        // check if the loop reached the end because of all chunks received of timeout
         if (hasAllChunks) {
-            PrintMessage.p("CHUNK RESTORE", String.format("Got all %d chunks for file %s",
-                    this.finfo.getChunks().size(), this.finfo.getFilename()), ConsoleColours.GREEN_BOLD_BRIGHT,
+            // informat that all chunks were received!!
+            PrintMessage.p("CHUNK RESTORE", String.format("Received all %d chunks for file %s",
+                    this.finfo.getNumberChunks(), this.finfo.getFilename()), ConsoleColours.GREEN_BOLD_BRIGHT,
                     ConsoleColours.GREEN);
+            // merge all chunks and write them to disk
             writeFileToDisk();
         } else
             PrintMessage.p("CHUNK RESTORE",
-                    String.format("Failed to get all chunks for file %s. ABORT", this.finfo.getFilename()),
+                    String.format("Failed to get all chunks for file %s. ABORT!", this.finfo.getFilename()),
                     ConsoleColours.RED_BOLD_BRIGHT, ConsoleColours.RED);
     }
 
@@ -102,6 +125,7 @@ public class ChunkReceiverWatcher implements Runnable {
      * @return
      */
     private byte[] getAllChunksData() {
+        // todo remove some of the chunks from memory upon restoring it
         System.out.println("number of chunks: " + this.peer.getReceivedChunkData().size());
         ConcurrentHashMap<Integer, byte[]> thisFilesHashMap = this.peer.getReceivedChunkData()
                 .get(finfo.getFileIdHex());
