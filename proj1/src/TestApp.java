@@ -1,3 +1,4 @@
+import java.io.Console;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -160,9 +161,12 @@ public class TestApp {
 		// display information regarding local service state
 
 		// display own backed up files
+		System.out.println(ConsoleColours.YELLOW_BRIGHT + "=====================================");
+		System.out.println("Information about local files backups");
+		System.out.println("=====================================" + ConsoleColours.RESET);
 		ConcurrentHashMap<String, FileInfo> localBackedUpFiles = s.getLocalBackedUpFiles();
 		if (localBackedUpFiles.size() == 0)
-			System.out.println(ConsoleColours.BLUE_BOLD_BRIGHT + "No backed up files" + ConsoleColours.RESET);
+			System.out.println("No backed up files");
 		for (Map.Entry<String, FileInfo> backedUpFile : localBackedUpFiles.entrySet()) {
 			String filename = backedUpFile.getKey();
 			FileInfo finfo = backedUpFile.getValue();
@@ -179,6 +183,37 @@ public class TestApp {
 						String.format("\t\tPerceived Replication Degree: %d", chunk.getValue().getBackupDegree()));
 			}
 		}
+
+		// display backed up chunks
+		System.out.println(ConsoleColours.YELLOW_BRIGHT + "===============================");
+		System.out.println("Information about stored chunks");
+		System.out.println("===============================" + ConsoleColours.RESET);
+		ConcurrentHashMap<String, ConcurrentHashMap<Integer, ChunkInfo>> fileChunks = s.getStoredChunks();
+		for (String fileId : fileChunks.keySet()) {
+			System.out.println(ConsoleColours.BLUE_BOLD_BRIGHT + "FILE " + fileId + ConsoleColours.RESET);
+			boolean hasLocalChunks = false;
+			ConcurrentHashMap<Integer, ChunkInfo> chunks = fileChunks.get(fileId);
+			for (Map.Entry<Integer, ChunkInfo> chunk : chunks.entrySet()) {
+				if (chunk.getValue().isStoredLocally()) {
+					hasLocalChunks = true;
+					System.out.println(ConsoleColours.RED_BOLD_BRIGHT + "\tCHUNK" + ConsoleColours.RESET);
+					System.out.println(String.format("\t\tChunk Id: %s", chunk.getKey()));
+					System.out.println(String.format("\t\tChunk Size: %d", chunk.getValue().getChunkSize()));
+					System.out.println(
+							String.format("\t\tPerceived Replication Degree: %d", chunk.getValue().getBackupDegree()));
+				}
+			}
+
+			if (!hasLocalChunks)
+				System.out.println("\tNo local backed up chunks");
+		}
+
+		// display information about peer storage
+		System.out.println(ConsoleColours.YELLOW_BRIGHT + "=========================");
+		System.out.println("Information about storage");
+		System.out.println("=========================" + ConsoleColours.RESET);
+		System.out.println(String.format("Storage capacity: %d (KB)", s.getStorageCapacity() / 1000));
+		System.out.println(String.format("Used storage: %d (KB)", s.getStorageUsed() / 1000));
 		return true;
 	}
 }
