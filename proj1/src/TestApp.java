@@ -150,7 +150,7 @@ public class TestApp {
 	}
 
 	private static boolean state(RMIRemote stub) throws RemoteException {
-		String s = stub.getState();
+		String s = stub.getServiceState();
 
 		System.out.println(s);
 		return true;

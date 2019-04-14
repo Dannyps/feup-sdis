@@ -13,6 +13,7 @@ public class ChunkInfo implements Serializable {
     private Integer replicationDegree;
     /** List of peer identifiers who stored this chunk */
     private TreeSet<Integer> ownerPeers;
+    private Boolean isLocal = false;
 
     /**
      * 
@@ -22,6 +23,12 @@ public class ChunkInfo implements Serializable {
     public ChunkInfo(Integer replicationDegree) {
         this.replicationDegree = replicationDegree;
         this.ownerPeers = new TreeSet<Integer>();
+    }
+
+    public ChunkInfo(Integer replicationDegree, boolean isLocal) {
+        this.replicationDegree = replicationDegree;
+        this.ownerPeers = new TreeSet<Integer>();
+        this.isLocal = isLocal;
     }
 
     /**
@@ -51,6 +58,14 @@ public class ChunkInfo implements Serializable {
      */
     public void removeOwnerPeer(Integer peerId) {
         this.ownerPeers.remove(peerId);
+    }
+
+    public boolean isStoredLocally() {
+        return this.isLocal;
+    }
+
+    public void setLocalStored() {
+        this.isLocal = true;
     }
 
 }

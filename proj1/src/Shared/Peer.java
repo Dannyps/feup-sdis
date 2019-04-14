@@ -80,6 +80,9 @@ public class Peer implements RMIRemote {
 	 * @deprecated
 	 */
 	private HashMap<String, HashMap<Integer, TreeSet<Integer>>> storedChunks;
+
+	private PeerState state;
+
 	/** Reference to the singleton peer */
 	private static Peer single_instance = null;
 	/** Manager for the runnables of this Peer (ThreadPool) */
@@ -140,6 +143,9 @@ public class Peer implements RMIRemote {
 		this.storedChunks = new HashMap<String, HashMap<Integer, TreeSet<Integer>>>();
 		this.receivedChunkInfo = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>>();
 		this.receivedChunkData = new ConcurrentHashMap<String, ConcurrentHashMap<Integer, byte[]>>();
+
+		this.state = new PeerState();
+
 		// instatiate thread pool
 		this.executor = new ThreadPoolExecutor(8, 8, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
@@ -174,13 +180,14 @@ public class Peer implements RMIRemote {
 		RegularFile f = new RegularFile(filename, replicationDegree);
 		ArrayList<Chunk> lst;
 
-		try {
-			this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(), f.getReplicationDegree()));
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
+		// try {
+		// this.getMyBackedUpFiles().put(filename, new FileInfo(filename, f.getFileId(),
+		// f.getReplicationDegree()));
+		// } catch (IOException e1) {
+		// // TODO Auto-generated catch block
+		// e1.printStackTrace();
+		// }
+		this.state.addLocalFileBackup(f, replicationDegree);
 		try {
 			lst = f.getChunks();
 			int i = 0;
@@ -235,7 +242,7 @@ public class Peer implements RMIRemote {
 		return 0;
 	}
 
-	public String getState() {
+	public String getServiceState() {
 		return "my state";
 	}
 
@@ -366,6 +373,10 @@ public class Peer implements RMIRemote {
 	 */
 	public String getProtocolVersion() {
 		return this.protoVer.getV();
+	}
+
+	public PeerState getState() {
+		return this.state;
 	}
 
 	/**

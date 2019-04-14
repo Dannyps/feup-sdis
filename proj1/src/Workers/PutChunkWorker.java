@@ -8,17 +8,19 @@ import java.nio.file.Paths;
 import Messages.PutChunkMessage;
 import Messages.StoredMessage;
 import Shared.Peer;
-import Utils.ChunkInfo;
+import Shared.PeerState;
 import Utils.PrintMessage;
 import Utils.ServiceFileSystem;
 
 public class PutChunkWorker implements Runnable {
     PutChunkMessage msg;
+    PeerState peerState;
     Peer peer;
 
     public PutChunkWorker(PutChunkMessage msg) {
         this.msg = msg;
         this.peer = Peer.getInstance();
+        this.peerState = this.peer.getState();
     }
 
     /**
@@ -56,13 +58,15 @@ public class PutChunkWorker implements Runnable {
         String fileIdHex = this.msg.getFileIdHexStr();
         Integer chunkNo = this.msg.getChunkNo();
 
+        // add a new reference for tracking this chunk, if it doesn't exist already
+        this.peerState.addStoreChunk(fileIdHex, chunkNo, this.msg.getReplicationDegree());
+
         // check if the chunk is already backed up locally
         // if not, store the chunk locally
-        if (!Peer.getInstance().isChunkLocal(fileIdHex, chunkNo)) {
+        if (!this.peerState.isChunkStoredLocally(fileIdHex, chunkNo)) {
             if (!storeChunk(fileIdHex, chunkNo))
-                return; // failed to store chunk
-            // registry the chunk
-            Peer.getInstance().registerLocalChunk(fileIdHex, chunkNo, new ChunkInfo(this.msg.getReplicationDegree()));
+                return; // failed to store chunk on disk
+            this.peerState.setStoredChunkLocal(fileIdHex, chunkNo);
         }
 
         // Random delay to avoid flooding Initiator peer with STORED messages

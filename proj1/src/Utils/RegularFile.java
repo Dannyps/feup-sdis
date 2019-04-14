@@ -189,6 +189,14 @@ public class RegularFile {
         return Hash.getHexHash(this.fileID);
     }
 
+    public String getFileName() {
+        return this.fileName;
+    }
+
+    public String getPathName() {
+        return this.path;
+    }
+
     /**
      * @return the replicationDegree
      */

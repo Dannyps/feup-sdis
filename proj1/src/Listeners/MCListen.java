@@ -30,6 +30,8 @@ public class MCListen extends ChannelListener {
         if (msg.getMessageType() == MessageType.STORED && msg.getSenderId() != this.serverId) {
             Peer.getInstance().chunkStored(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
             Peer.getInstance().updateLocalChunkOwners(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
+
+            this.peer.getState().addStoredChunkOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
         } else if (msg.getMessageType() == MessageType.GETCHUNK && msg.getSenderId() != this.serverId) {
             // launch thread to reply requested chunk
             ChunkSenderWorker w = new ChunkSenderWorker((GetChunkMessage) msg);

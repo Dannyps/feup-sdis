@@ -16,6 +16,8 @@ public class FileInfo implements Serializable {
     byte[] fileIdHex;
     // the replication degree (specified when the backup was made)
     int rdegree = 0;
+    Integer numChunks;
+    ConcurrentHashMap<Integer, ChunkInfo> chunks;
     // information about this file's chunks
     ConcurrentHashMap<Integer, Integer> chunkBDs;
 
@@ -25,11 +27,28 @@ public class FileInfo implements Serializable {
      * @param fileIdHex The hexadecimal file hash string
      * @param chunkNo   The amount of chunks needed for this file
      */
-    public FileInfo(String filename, byte[] fileIdHex, int rdegree) {
+    public FileInfo(String filename, byte[] fileIdHex, int rdegree, int numChunks) {
         this.filename = filename;
         this.fileIdHex = fileIdHex;
         this.rdegree = rdegree;
+        this.numChunks = numChunks;
         this.chunkBDs = new ConcurrentHashMap<Integer, Integer>();
+    }
+
+    /**
+     * Updates the list of peers who own a given chunk
+     * 
+     * @param chunkNo
+     * @param ownerPeer
+     */
+    public void addChunkOwner(Integer chunkNo, Integer ownerPeer) {
+        if (this.chunks.containsKey(chunkNo))
+            this.chunks.get(chunkNo).addOwnerPeer(ownerPeer);
+    }
+
+    public void removeChunkOwner(Integer chunkNo, Integer ownerPeer) {
+        if (this.chunks.containsKey(chunkNo))
+            this.chunks.get(chunkNo).removeOwnerPeer(ownerPeer);
     }
 
     public void setBD(Integer chunkNo, Integer bd) {
@@ -42,13 +61,14 @@ public class FileInfo implements Serializable {
     public ConcurrentHashMap<Integer, Integer> getChunks() {
         return this.chunkBDs;
     }
+
     /**
      * @return the desired replication degree
      */
     public int getRdegree() {
         return rdegree;
     }
-    
+
     /**
      * @return the filename
      */
@@ -56,11 +76,11 @@ public class FileInfo implements Serializable {
         return filename;
     }
 
-	public byte[] getFileId() {
-		return fileIdHex;
+    public byte[] getFileId() {
+        return fileIdHex;
     }
-    
+
     public String getFileIdHex() {
-		return Hash.getHexHash(this.fileIdHex);
-	}
+        return Hash.getHexHash(this.fileIdHex);
+    }
 }
