@@ -129,6 +129,7 @@ public class PeerState {
      * @param chunkNo
      * @param ownerPeer
      */
+    @Deprecated
     public void removeLocalFileBackupChunkOwner(String fileId, Integer chunkNo, Integer ownerPeer) {
         // TODO same as above
         FileInfo finfo = this.localBackedUpFiles.get(fileId);
@@ -138,6 +139,8 @@ public class PeerState {
     }
 
     // #endregion
+
+    // #region Methods for mananing other peers backed up files
     /**
      * Registers the ocurrence of a new chunk backup request (doesn't necessarially
      * mean any peer has stored it yet)
@@ -146,7 +149,7 @@ public class PeerState {
      * @param chunkNo
      * @param replicationDegree
      */
-    public void addStoreChunk(String fileId, Integer chunkNo, Integer replicationDegree) {
+    public void addChunkBackup(String fileId, Integer chunkNo, Integer replicationDegree) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
         if (chunks == null) {
             chunks = new ConcurrentHashMap<Integer, ChunkInfo>();
@@ -166,11 +169,27 @@ public class PeerState {
      * @param fileId
      * @param chunkNo
      */
-    public void setStoredChunkLocal(String fileId, Integer chunkNo) {
+    public void setChunkBackupAsLocal(String fileId, Integer chunkNo) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
         if (chunks != null) {
-            chunks.get(chunkNo).setLocalStored();
+            chunks.get(chunkNo).setLocalStored(); // TODO the key might not exist, enhance code
         }
+    }
+
+    /**
+     * 
+     * @param fileId
+     * @param chunkNo
+     * @return
+     */
+    public boolean isChunkStoredLocally(String fileId, Integer chunkNo) {
+        if (this.storedChunks.containsKey(fileId)) {
+            if (this.storedChunks.get(fileId).containsKey(chunkNo)) {
+                return this.storedChunks.get(fileId).get(chunkNo).isStoredLocally();
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -194,6 +213,7 @@ public class PeerState {
      * @param chunkNo
      * @return
      */
+    @Deprecated
     public boolean chunkStoreEntryExists(String fileId, Integer chunkNo) {
         if (this.storedChunks.containsKey(fileId)) {
             return this.storedChunks.get(fileId).containsKey(chunkNo);
@@ -202,19 +222,5 @@ public class PeerState {
         return false;
     }
 
-    /**
-     * 
-     * @param fileId
-     * @param chunkNo
-     * @return
-     */
-    public boolean isChunkStoredLocally(String fileId, Integer chunkNo) {
-        if (this.storedChunks.containsKey(fileId)) {
-            if (this.storedChunks.get(fileId).containsKey(chunkNo)) {
-                return this.storedChunks.get(fileId).get(chunkNo).isStoredLocally();
-            }
-        }
-
-        return false;
-    }
+    // #endregion
 }

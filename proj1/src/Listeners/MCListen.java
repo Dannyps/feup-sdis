@@ -39,7 +39,6 @@ public class MCListen extends ChannelListener {
                 // some peer stored some chunk, and I must keep track of it
 
             }
-            this.peer.getState().addStoredChunkOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
         } else if (msg.getMessageType() == MessageType.GETCHUNK && msg.getSenderId() != this.serverId) {
             // launch thread to reply requested chunk
             ChunkSenderWorker w = new ChunkSenderWorker((GetChunkMessage) msg);

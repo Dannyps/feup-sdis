@@ -59,14 +59,16 @@ public class PutChunkWorker implements Runnable {
         Integer chunkNo = this.msg.getChunkNo();
 
         // add a new reference for tracking this chunk, if it doesn't exist already
-        this.peerState.addStoreChunk(fileIdHex, chunkNo, this.msg.getReplicationDegree());
+        this.peerState.addChunkBackup(fileIdHex, chunkNo, this.msg.getReplicationDegree());
 
         // check if the chunk is already backed up locally
         // if not, store the chunk locally
         if (!this.peerState.isChunkStoredLocally(fileIdHex, chunkNo)) {
+            // not local, attempt to write it to the local file system
             if (!storeChunk(fileIdHex, chunkNo))
                 return; // failed to store chunk on disk
-            this.peerState.setStoredChunkLocal(fileIdHex, chunkNo);
+            // chunk is now locally stored, update ChunkInfo and set it as locally stored
+            this.peerState.setChunkBackupAsLocal(fileIdHex, chunkNo);
         }
 
         // Random delay to avoid flooding Initiator peer with STORED messages
