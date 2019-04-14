@@ -171,8 +171,8 @@ public class PeerState {
      */
     public void setChunkBackupAsLocal(String fileId, Integer chunkNo) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
-        if (chunks != null) {
-            chunks.get(chunkNo).setLocalStored(); // TODO the key might not exist, enhance code
+        if (chunks != null && chunks.containsKey(chunkNo)) {
+            chunks.get(chunkNo).setLocalStored();
         }
     }
 
@@ -199,9 +199,9 @@ public class PeerState {
      * @param chunkNo
      * @param peerId
      */
-    public void addStoredChunkOwner(String fileId, Integer chunkNo, Integer peerId) {
+    public void addChunkBackupOwner(String fileId, Integer chunkNo, Integer peerId) {
         ConcurrentHashMap<Integer, ChunkInfo> chunks = this.storedChunks.get(fileId);
-        if (chunks != null) {
+        if (chunks != null && chunks.containsKey(chunkNo)) {
             chunks.get(chunkNo).addOwnerPeer(peerId);
         }
     }

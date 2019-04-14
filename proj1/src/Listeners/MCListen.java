@@ -37,7 +37,7 @@ public class MCListen extends ChannelListener {
                 this.peer.getState().addLocalFileChunkOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
             } else {
                 // some peer stored some chunk, and I must keep track of it
-
+                this.peer.getState().addChunkBackupOwner(msg.getFileIdHexStr(), msg.getChunkNo(), msg.getSenderId());
             }
         } else if (msg.getMessageType() == MessageType.GETCHUNK && msg.getSenderId() != this.serverId) {
             // launch thread to reply requested chunk
