@@ -2,8 +2,6 @@ package Shared;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-
-import Utils.Chunk;
 import Utils.ChunkInfo;
 import Utils.FileInfo;
 import Utils.RegularFile;

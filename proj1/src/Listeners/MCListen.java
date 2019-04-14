@@ -8,7 +8,6 @@ import Messages.MessageType;
 import Shared.Peer;
 import Utils.PrintMessage;
 import Workers.ChunkSenderWorker;
-import Workers.DeleteSenderWorker;
 import Workers.DeleteWorker;
 
 /**

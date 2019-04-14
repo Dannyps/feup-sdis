@@ -1,12 +1,10 @@
 package Workers;
 
-import java.io.Console;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
-
 import Shared.Peer;
 import Utils.ConsoleColours;
 import Utils.FileInfo;
@@ -124,6 +122,7 @@ public class ChunkReceiverWatcher implements Runnable {
      * 
      * @return
      */
+    // TODO nullPointerException
     private byte[] getAllChunksData() {
         // todo remove some of the chunks from memory upon restoring it
         System.out.println("number of chunks: " + this.peer.getReceivedChunkData().size());

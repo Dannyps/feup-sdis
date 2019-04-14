@@ -1,20 +1,10 @@
 package Workers;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
-
 import Messages.ChunkMessage;
-import Messages.GetChunkMessage;
-import Messages.PutChunkMessage;
-import Messages.StoredMessage;
 import Shared.Peer;
 import Utils.ConsoleColours;
 import Utils.PrintMessage;
-import Utils.ServiceFileSystem;
 
 /**
  * Handles the reception of a CHUNK message through the MDR channel

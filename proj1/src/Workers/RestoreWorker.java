@@ -2,25 +2,14 @@ package Workers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.util.ArrayList;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
-
 import Messages.GetChunkMessage;
-import Messages.PutChunkMessage;
 import Shared.Peer;
-import Utils.Chunk;
 import Utils.ConsoleColours;
-import Utils.FileInfo;
 import Utils.PrintMessage;
 
 // does it make sense to be callable?
 public class RestoreWorker implements Runnable {
-    private String protocolVersion;
-    private Integer serverId;
-    private Chunk chunk;
     private Peer peer;
-    private String filename;
     private int chunkno;
     private GetChunkMessage msg;
 
@@ -30,8 +19,6 @@ public class RestoreWorker implements Runnable {
      */
     public RestoreWorker(GetChunkMessage msg, int chunkNo) {
         this.peer = Peer.getInstance(); // get a reference to the singleton peer
-        this.protocolVersion = this.peer.getProtocolVersion();
-        this.serverId = this.peer.getPeerId();
         this.msg = msg;
     }
 
