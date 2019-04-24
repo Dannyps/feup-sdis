@@ -226,6 +226,8 @@ public abstract class Message {
         // get the message type
         String msgType = headFields[0];
 
+        msgType=msgType.toUpperCase();
+
         /** all possible fields */
         String version = headFields[1];
         Integer senderId = Integer.parseInt(headFields[2]);

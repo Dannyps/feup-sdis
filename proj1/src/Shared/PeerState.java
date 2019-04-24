@@ -35,7 +35,7 @@ public class PeerState implements Serializable {
         this.localBackedUpFiles = new ConcurrentHashMap<>();
         this.storedChunks = new ConcurrentHashMap<>();
         this.storageUsed = 0;
-        this.storageCapacity = 64000 * 5; // bytes
+        this.storageCapacity = 64000 * 5*100; // bytes
     }
 
     // #region Methods for managing local file backups
